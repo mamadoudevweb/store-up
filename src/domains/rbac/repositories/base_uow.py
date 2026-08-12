@@ -3,14 +3,15 @@ from __future__ import annotations
 
 import abc
 
-from src.domains.rbac.entities import Permission, Role
-from src.domains.rbac.repositories.filters import PermissionFilter, RoleFilter
+from src.domains.rbac.entities import Permission, Role, RolePermission
+from src.domains.rbac.repositories.filters import PermissionFilter, RoleFilter, RolePermissionFilter
 from src.domains.shared.repositories import BaseRepository
 
 
 class RbacUnitOfWork(abc.ABC):
     roles: BaseRepository[Role, RoleFilter]
     permissions: BaseRepository[Permission, PermissionFilter]
+    role_permissions: BaseRepository[RolePermission, RolePermissionFilter]
 
     def __enter__(self) -> RbacUnitOfWork:
         return self
@@ -24,12 +25,4 @@ class RbacUnitOfWork(abc.ABC):
 
     @abc.abstractmethod
     def rollback(self) -> None:
-        pass
-
-    @abc.abstractmethod
-    def add_permission_to_role(self, role_id: str, permission_id: str) -> None:
-        pass
-
-    @abc.abstractmethod
-    def remove_permission_from_role(self, role_id: str, permission_id: str) -> None:
         pass

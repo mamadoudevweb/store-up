@@ -84,7 +84,7 @@ def _import_models() -> None:
     except ImportError:
         pass
     try:
-        import src.domains.rbac.repositories.sql.models  # noqa: F401
+        import src.domains.rbac.repositories.sql.orms  # noqa: F401
     except ImportError:
         pass
     try:
@@ -303,7 +303,7 @@ def _wire_services(app: Flask, redis_client: object) -> None:
     # ── RBAC ──────────────────────────────────────────────────────────────
     try:
         from src.domains.rbac.repositories.sql.sql_uow import SqlRbacUnitOfWork
-        from src.domains.rbac.services.rbac_service import RbacService
+        from src.domains.rbac.services import RbacService
         rbac_uow = SqlRbacUnitOfWork(session_factory)
         app.extensions["rbac_service"] = RbacService(rbac_uow, event_bus)
     except ImportError:

@@ -1,8 +1,8 @@
 """RBAC repository utilities and mappers."""
 from __future__ import annotations
 
-from src.domains.rbac.entities import Permission, Role
-from src.domains.rbac.repositories.sql.orms import PermissionModel, RoleModel
+from src.domains.rbac.entities import Permission, Role, RolePermission
+from src.domains.rbac.repositories.sql.orms import PermissionModel, RoleModel, RolePermissionModel
 
 
 def map_role_to_entity(model: RoleModel) -> Role:
@@ -42,4 +42,20 @@ def map_permission_to_model(entity: Permission) -> PermissionModel:
         action=entity.action,
         description=entity.description,
         created_at=entity.created_at,
+    )
+
+
+def map_role_permission_to_entity(model: RolePermissionModel) -> RolePermission:
+    return RolePermission(
+        role_id=model.role_id,
+        permission_id=model.permission_id,
+        assigned_at=model.assigned_at,
+    )
+
+
+def map_role_permission_to_model(entity: RolePermission) -> RolePermissionModel:
+    return RolePermissionModel(
+        role_id=entity.role_id,
+        permission_id=entity.permission_id,
+        assigned_at=entity.assigned_at,
     )

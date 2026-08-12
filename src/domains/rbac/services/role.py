@@ -38,37 +38,3 @@ class RoleService:
             if not role:
                 raise RoleNotFound(f"Role '{role_id}' not found.")
             return ServiceResult.ok(role)
-
-    def assign_permission(self, role_id: str | uuid.UUID, permission_id: str | uuid.UUID) -> ServiceResult[None]:
-        if isinstance(role_id, str):
-            role_id = uuid.UUID(role_id)
-        if isinstance(permission_id, str):
-            permission_id = uuid.UUID(permission_id)
-
-        with self._uow as uow:
-            if not uow.roles.exists(RoleFilter(id=role_id)):
-                raise RoleNotFound()
-            if not uow.permissions.exists(PermissionFilter(id=permission_id)):
-                raise PermissionNotFound()
-
-            uow.add_permission_to_role(role_id, permission_id)
-            uow.commit()
-
-            self._bus.publish(RolePermissionAssigned(role_id=role_id, permission_id=permission_id))
-            return ServiceResult.ok(None)
-
-    def revoke_permission(self, role_id: str | uuid.UUID, permission_id: str | uuid.UUID) -> ServiceResult[None]:
-        if isinstance(role_id, str):
-            role_id = uuid.UUID(role_id)
-        if isinstance(permission_id, str):
-            permission_id = uuid.UUID(permission_id)
-
-        with self._uow as uow:
-            if not uow.roles.exists(RoleFilter(id=role_id)):
-                raise RoleNotFound()
-
-            uow.remove_permission_from_role(role_id, permission_id)
-            uow.commit()
-
-            self._bus.publish(RolePermissionRevoked(role_id=role_id, permission_id=permission_id))
-            return ServiceResult.ok(None)

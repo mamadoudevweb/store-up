@@ -19,3 +19,10 @@ class PermissionFilter(BaseFilter):
     resource: str | None = None
     action: str | None = None
     role_id: uuid.UUID | None = None
+
+
+@dataclass
+class RolePermissionFilter(BaseFilter):
+    role_id: uuid.UUID | None = None
+    permission_id: uuid.UUID | None = None
+

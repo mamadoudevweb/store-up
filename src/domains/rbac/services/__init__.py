@@ -6,6 +6,7 @@ from src.domains.shared.events import EventBus
 
 from .role import RoleService
 from .permission import PermissionService
+from .role_permission import RolePermissionService
 
 
 class RbacService:
@@ -17,3 +18,4 @@ class RbacService:
         
         self.role = RoleService(uow, bus)
         self.permission = PermissionService(uow, bus)
+        self.role_permission = RolePermissionService(uow, bus)

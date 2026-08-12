@@ -1,0 +1,57 @@
+"""Role routes."""
+from __future__ import annotations
+
+from uuid import UUID
+
+from flask import Blueprint, request
+from flask_jwt_extended import jwt_required
+
+from src.domains.rbac.repositories.filters import RoleFilter
+from src.domains.rbac.routes.v1.helpers import get_rbac_service, serialize_role
+from src.domains.rbac.routes.v1.schemas.rbac_schemas import CreateRoleRequest
+from src.domains.shared.responses import paginated, success
+
+bp = Blueprint("role", __name__)
+
+
+@bp.post("")
+@jwt_required()
+def create_role():  # type: ignore[no-untyped-def]
+    body = CreateRoleRequest.model_validate(request.get_json(force=True))
+    result = get_rbac_service().role.create_role(
+        name=body.name,
+        description=body.description,
+    )
+    return success(serialize_role(result.data), status=201)
+
+
+@bp.get("")
+@jwt_required()
+def list_roles():  # type: ignore[no-untyped-def]
+    filters = RoleFilter(
+        page=int(request.args.get("page", 1)),
+        limit=int(request.args.get("limit", 20)),
+        name=request.args.get("name"),
+    )
+    with get_rbac_service()._uow as uow:
+        result = uow.roles.list(filters)
+    return paginated(result, serialize_role)
+
+
+@bp.get("/<uuid:role_id>")
+@jwt_required()
+def get_role(role_id: UUID):  # type: ignore[no-untyped-def]
+    result = get_rbac_service().role.get_role(role_id)
+    return success(serialize_role(result.data))
+
+
+@bp.delete("/<uuid:role_id>")
+@jwt_required()
+def delete_role(role_id: UUID):  # type: ignore[no-untyped-def]
+    svc = get_rbac_service()
+    with svc._uow as uow:
+        role = uow.roles.get(RoleFilter(id=role_id))
+        if role:
+            uow.roles.delete(role)
+            uow.commit()
+    return success(None)
