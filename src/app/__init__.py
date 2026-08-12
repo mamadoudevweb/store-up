@@ -107,13 +107,12 @@ def _import_models() -> None:
 def _register_blueprints(app: Flask) -> None:
     """Register all domain route blueprints."""
     try:
-        from src.domains.accounts.routes.v1 import router as accounts_router
-        app.register_blueprint(accounts_router, url_prefix="/api/v1")
-    except ImportError:
-        pass
-    try:
-        from src.domains.auth.routes.v1 import router as auth_router
-        app.register_blueprint(auth_router, url_prefix="/api/v1")
+        from src.domains.accounts.routes.v1 import router as accounts_v1
+        from src.domains.auth.routes.v1 import router as auth_v1
+
+        # Mount v1 domain routers
+        app.register_blueprint(accounts_v1, url_prefix="/api/v1")
+        app.register_blueprint(auth_v1, url_prefix="/api/v1")
     except ImportError:
         pass
     try:
@@ -191,8 +190,11 @@ def _register_jwt_callbacks(app: Flask, redis_client: redis_lib.Redis) -> None: 
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header: dict, jwt_payload: dict) -> bool:  # type: ignore[type-arg]
         jti = jwt_payload["jti"]
-        token_in_redis = redis_client.get(f"jwt:blocklist:{jti}")
-        return token_in_redis is not None
+        # Delegate to whichever denylist implementation was wired (Redis or InMemory)
+        denylist = app.extensions.get("token_denylist")
+        if denylist is None:
+            return False
+        return denylist.is_revoked(jti)
 
     @jwt.revoked_token_loader
     def revoked_token_response(jwt_header: dict, jwt_payload: dict):  # type: ignore[type-arg]
@@ -279,10 +281,21 @@ def _wire_services(app: Flask, redis_client: object) -> None:
 
     # ── Auth ──────────────────────────────────────────────────────────────
     try:
-        from src.domains.auth.services.auth_service import AuthService
-        from src.domains.accounts.repositories.sql.sql_uow import SqlAccountUnitOfWork
-        auth_uow = SqlAccountUnitOfWork(session_factory)
-        app.extensions["auth_service"] = AuthService(auth_uow, redis_client, event_bus)  # type: ignore[arg-type]
+        from src.domains.auth.services import AuthService
+        
+        # Choose denylist implementation based on environment:
+        # - production → Redis (persistent, shared across processes)
+        # - development / testing → InMemory (no external dependency)
+        env = app.config.get("FLASK_ENV", "development")
+        if env == "production":
+            from src.domains.auth.repositories.redis_denylist import RedisTokenDenylist
+            denylist = RedisTokenDenylist(redis_client)  # type: ignore[arg-type]
+        else:
+            from src.domains.auth.repositories.memory_denylist import InMemoryTokenDenylist
+            denylist = InMemoryTokenDenylist()
+        
+        app.extensions["auth_service"] = AuthService(account_uow, denylist, event_bus)
+        app.extensions["token_denylist"] = denylist
     except ImportError:
         pass
 
