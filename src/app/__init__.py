@@ -271,7 +271,7 @@ def _wire_services(app: Flask, redis_client: object) -> None:
     # ── Accounts ──────────────────────────────────────────────────────────
     try:
         from src.domains.accounts.repositories.sql.sql_uow import SqlAccountUnitOfWork
-        from src.domains.accounts.services.account_service import AccountService
+        from src.domains.accounts.services import AccountService
         account_uow = SqlAccountUnitOfWork(session_factory)
         app.extensions["account_service"] = AccountService(account_uow, event_bus)
     except ImportError:
