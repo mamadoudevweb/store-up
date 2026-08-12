@@ -16,9 +16,7 @@ class AccountRoleModel(db.Model):
     account_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True
     )
-    role_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True
-    )
+    role_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
     domain_scope: Mapped[str | None] = mapped_column(String(100), nullable=True)
     assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     assigned_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
