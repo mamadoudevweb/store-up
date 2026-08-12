@@ -39,6 +39,9 @@ def create_app(env: str | None = None) -> Flask:
     # ── Store config on app for CLI commands ──────────────────────────────
     app.extensions["config"] = config
 
+    # ── Wire domain services (DI — domains never import from app/) ─────────
+    _wire_services(app, redis_client)
+
     # ── Register middleware ────────────────────────────────────────────────
     register_middleware(app)
 
@@ -251,3 +254,91 @@ def _register_static_files(app: Flask, upload_folder: str) -> None:
     @app.route("/files/<path:filename>")
     def serve_upload(filename: str):  # type: ignore[no-untyped-def]
         return send_from_directory(os.path.abspath(upload_folder), filename)
+
+
+def _wire_services(app: Flask, redis_client: object) -> None:
+    """
+    Instantiate all domain UoWs and services, register them in app.extensions.
+    """
+    from sqlalchemy.orm import sessionmaker
+
+    from src.app.extensions import db
+    from src.domains.shared.events import event_bus
+
+    # SQLAlchemy session factory
+    session_factory = sessionmaker(bind=db.engine)
+
+    # ── Accounts ──────────────────────────────────────────────────────────
+    try:
+        from src.domains.accounts.repositories.sql.sql_uow import SqlAccountUnitOfWork
+        from src.domains.accounts.services.account_service import AccountService
+        account_uow = SqlAccountUnitOfWork(session_factory)
+        app.extensions["account_service"] = AccountService(account_uow, event_bus)
+    except ImportError:
+        pass
+
+    # ── Auth ──────────────────────────────────────────────────────────────
+    try:
+        from src.domains.auth.services.auth_service import AuthService
+        from src.domains.accounts.repositories.sql.sql_uow import SqlAccountUnitOfWork
+        auth_uow = SqlAccountUnitOfWork(session_factory)
+        app.extensions["auth_service"] = AuthService(auth_uow, redis_client, event_bus)  # type: ignore[arg-type]
+    except ImportError:
+        pass
+
+    # ── RBAC ──────────────────────────────────────────────────────────────
+    try:
+        from src.domains.rbac.repositories.sql.sql_uow import SqlRbacUnitOfWork
+        from src.domains.rbac.services.rbac_service import RbacService
+        rbac_uow = SqlRbacUnitOfWork(session_factory)
+        app.extensions["rbac_service"] = RbacService(rbac_uow, event_bus)
+    except ImportError:
+        pass
+
+    # ── Products ──────────────────────────────────────────────────────────
+    try:
+        from src.domains.products.repositories.sql.sql_uow import SqlProductUnitOfWork
+        from src.domains.products.services.product_service import ProductService
+        product_uow = SqlProductUnitOfWork(session_factory)
+        app.extensions["product_service"] = ProductService(product_uow, event_bus)
+    except ImportError:
+        pass
+
+    # ── Inventory ─────────────────────────────────────────────────────────
+    try:
+        from src.domains.inventory.repositories.sql.sql_uow import SqlInventoryUnitOfWork
+        from src.domains.inventory.services.inventory_service import InventoryService
+        inventory_uow = SqlInventoryUnitOfWork(session_factory)
+        app.extensions["inventory_service"] = InventoryService(inventory_uow, event_bus)
+    except ImportError:
+        pass
+
+    # ── Sales ─────────────────────────────────────────────────────────────
+    try:
+        from src.domains.sales.repositories.sql.sql_uow import SqlSalesUnitOfWork
+        from src.domains.sales.services.sale_service import SaleService
+        sales_uow = SqlSalesUnitOfWork(session_factory)
+        app.extensions["sale_service"] = SaleService(sales_uow, event_bus)
+    except ImportError:
+        pass
+
+    # ── Reports ───────────────────────────────────────────────────────────
+    try:
+        from src.domains.reports.repositories.sql.sql_uow import SqlReportUnitOfWork
+        from src.domains.reports.services.report_service import ReportService
+        report_uow = SqlReportUnitOfWork(session_factory)
+        app.extensions["report_service"] = ReportService(report_uow)
+    except ImportError:
+        pass
+
+    # ── Notifications ─────────────────────────────────────────────────────
+    try:
+        from src.domains.notifications.repositories.sql.sql_uow import SqlNotificationUnitOfWork
+        from src.domains.notifications.services.notification_service import NotificationService
+        notification_uow = SqlNotificationUnitOfWork(session_factory)
+        notification_service = NotificationService(notification_uow, event_bus)
+        app.extensions["notification_service"] = notification_service
+        # Register event subscribers
+        notification_service.register_subscribers()
+    except ImportError:
+        pass
