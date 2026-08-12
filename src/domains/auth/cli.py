@@ -42,6 +42,20 @@ def bootstrap_superuser(first_name, last_name, username, email, password):
             email=email,
             password=password,
         )
+
+        # 3. Assign superuser role
+        rbac_service = current_app.extensions.get("rbac_service")
+        if rbac_service:
+            # First, ensure the superuser role exists (or create it)
+            role_res = rbac_service.create_role("superuser", "Full system access")
+            role_id = role_res.data.id
+            
+            account_service.role.assign_role(
+                account_id=account_id,
+                role_id=role_id,
+                assigned_by=account_id,
+                domain_scope="system",
+            )
         
         click.secho(f"Superuser '{username}' created successfully!", fg="green")
 

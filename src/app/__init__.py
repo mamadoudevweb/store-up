@@ -40,7 +40,8 @@ def create_app(env: str | None = None) -> Flask:
     app.extensions["config"] = config
 
     # ── Wire domain services (DI — domains never import from app/) ─────────
-    _wire_services(app, redis_client)
+    with app.app_context():
+        _wire_services(app, redis_client)
 
     # ── Register middleware ────────────────────────────────────────────────
     register_middleware(app)

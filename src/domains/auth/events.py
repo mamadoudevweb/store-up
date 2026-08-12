@@ -4,16 +4,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
-from src.domains.shared.events import Event
+from src.domains.shared.events import DomainEvent
 
 
 @dataclass
-class UserLoggedIn(Event):
+class UserLoggedIn(DomainEvent):
     account_id: UUID
     username: str
     ip_address: str | None = None
 
 
 @dataclass
-class UserLoggedOut(Event):
+class UserLoggedOut(DomainEvent):
     jti: str
