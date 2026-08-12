@@ -4,11 +4,9 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from src.domains.accounts.repositories.base_uow import BaseAccountUnitOfWork
-from src.domains.accounts.repositories.sql.sql_repositories import (
-    SqlAccountRepository,
-    SqlAccountRoleRepository,
-    SqlCredentialRepository,
-)
+from src.domains.accounts.repositories.sql.account_repository import SqlAccountRepository
+from src.domains.accounts.repositories.sql.account_role_repository import SqlAccountRoleRepository
+from src.domains.accounts.repositories.sql.credential_repository import SqlCredentialRepository
 
 
 class SqlAccountUnitOfWork(BaseAccountUnitOfWork):

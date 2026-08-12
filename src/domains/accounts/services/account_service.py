@@ -18,10 +18,13 @@ from src.domains.accounts.exceptions import (
     UsernameConflict,
 )
 from src.domains.accounts.events import RoleAssigned, RoleRevoked
-from src.domains.accounts.repositories.base_repository import AccountFilter
+from src.domains.accounts.repositories.filters import (
+    AccountFilter,
+    AccountRoleFilter,
+    CredentialFilter,
+)
 from src.domains.accounts.repositories.base_uow import BaseAccountUnitOfWork
 from src.domains.shared.events import EventBus
-from src.domains.shared.filters import BaseFilter
 from src.domains.shared.pagination import Paginated
 from src.domains.shared.service_result import ServiceResult
 
@@ -50,7 +53,7 @@ class AccountService:
 
     def get_account(self, account_id: UUID) -> ServiceResult[Account]:
         with self._uow as uow:
-            account = uow.accounts.get(account_id)
+            account = uow.accounts.get(AccountFilter(id=account_id))
         if not account:
             raise AccountNotFound()
         return ServiceResult.ok(account)
@@ -68,7 +71,7 @@ class AccountService:
         birth_date: date | None = None,
     ) -> ServiceResult[Account]:
         with self._uow as uow:
-            account = uow.accounts.get(account_id)
+            account = uow.accounts.get(AccountFilter(id=account_id))
             if not account:
                 raise AccountNotFound()
             account.update(first_name, last_name, birth_date)
@@ -79,7 +82,7 @@ class AccountService:
 
     def suspend_account(self, account_id: UUID) -> ServiceResult[Account]:
         with self._uow as uow:
-            account = uow.accounts.get(account_id)
+            account = uow.accounts.get(AccountFilter(id=account_id))
             if not account:
                 raise AccountNotFound()
             account.suspend()
@@ -98,17 +101,21 @@ class AccountService:
         password: str,
     ) -> ServiceResult[Credential]:
         with self._uow as uow:
-            account = uow.accounts.get(account_id)
+            account = uow.accounts.get(AccountFilter(id=account_id))
             if not account:
                 raise AccountNotFound()
             if not account.is_active():
                 raise AccountSuspendedError()
-            if uow.credentials.get_by_account(account_id):
+                
+            if uow.credentials.exists(CredentialFilter(account_id=account_id)):
                 raise CredentialAlreadyExists()
-            if uow.credentials.get_by_username(username):
+                
+            if uow.credentials.exists(CredentialFilter(username=username)):
                 raise UsernameConflict()
-            if uow.credentials.get_by_email(email):
+                
+            if uow.credentials.exists(CredentialFilter(email=email)):
                 raise EmailConflict()
+                
             password_hash = bcrypt.hashpw(
                 password.encode(), bcrypt.gensalt()
             ).decode()
@@ -120,7 +127,7 @@ class AccountService:
 
     def get_credentials(self, account_id: UUID) -> ServiceResult[Credential]:
         with self._uow as uow:
-            cred = uow.credentials.get_by_account(account_id)
+            cred = uow.credentials.get(CredentialFilter(account_id=account_id))
         if not cred:
             raise CredentialNotFound()
         return ServiceResult.ok(cred)
@@ -133,15 +140,17 @@ class AccountService:
         password: str | None = None,
     ) -> ServiceResult[Credential]:
         with self._uow as uow:
-            cred = uow.credentials.get_by_account(account_id)
+            cred = uow.credentials.get(CredentialFilter(account_id=account_id))
             if not cred:
                 raise CredentialNotFound()
+            
             if username and username != cred.username:
-                if uow.credentials.get_by_username(username):
+                if uow.credentials.exists(CredentialFilter(username=username)):
                     raise UsernameConflict()
             if email and email != cred.email:
-                if uow.credentials.get_by_email(email):
+                if uow.credentials.exists(CredentialFilter(email=email)):
                     raise EmailConflict()
+                    
             password_hash: str | None = None
             if password:
                 password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
@@ -161,11 +170,11 @@ class AccountService:
         domain_scope: str | None = None,
     ) -> ServiceResult[AccountRole]:
         with self._uow as uow:
-            account = uow.accounts.get(account_id)
+            account = uow.accounts.get(AccountFilter(id=account_id))
             if not account:
                 raise AccountNotFound()
-            existing = uow.account_roles.get(account_id, role_id)
-            if existing:
+            
+            if uow.account_roles.exists(AccountRoleFilter(account_id=account_id, role_id=role_id)):
                 raise RoleAlreadyAssigned()
             assignment = AccountRole.create(account_id, role_id, assigned_by, domain_scope)
             uow.account_roles.add(assignment)
@@ -177,15 +186,16 @@ class AccountService:
 
     def list_roles(self, account_id: UUID) -> ServiceResult[list[AccountRole]]:
         with self._uow as uow:
-            account = uow.accounts.get(account_id)
+            account = uow.accounts.get(AccountFilter(id=account_id))
             if not account:
                 raise AccountNotFound()
-            roles = uow.account_roles.list_by_account(account_id)
+            # Still use list here because an account can have multiple roles
+            roles = uow.account_roles.list(AccountRoleFilter(account_id=account_id, limit=100)).items
         return ServiceResult.ok(roles)
 
     def revoke_role(self, account_id: UUID, role_id: UUID) -> ServiceResult[None]:
         with self._uow as uow:
-            assignment = uow.account_roles.get(account_id, role_id)
+            assignment = uow.account_roles.get(AccountRoleFilter(account_id=account_id, role_id=role_id))
             if not assignment:
                 raise RoleAssignmentNotFound()
             uow.account_roles.delete(assignment)
@@ -196,10 +206,9 @@ class AccountService:
     def get_effective_permissions(self, account_id: UUID) -> ServiceResult[list[str]]:
         """Resolved union of all permissions across all of the account's roles."""
         with self._uow as uow:
-            account = uow.accounts.get(account_id)
+            account = uow.accounts.get(AccountFilter(id=account_id))
             if not account:
                 raise AccountNotFound()
-            role_assignments = uow.account_roles.list_by_account(account_id)
+            role_assignments = uow.account_roles.list(AccountRoleFilter(account_id=account_id, limit=100)).items
         # Permission resolution is delegated to the RBAC domain service
-        # (called from the route layer after injecting both services)
-        return ServiceResult.ok([r.role_id for r in role_assignments])  # type: ignore[arg-type]
+        return ServiceResult.ok([str(r.role_id) for r in role_assignments])

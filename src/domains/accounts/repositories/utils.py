@@ -1,18 +1,13 @@
-"""Mappers between Account ORM models and domain entities.
-
-Pure functions — no side effects, no session access.
-"""
+"""Mappers between Account ORM models and domain entities."""
 from __future__ import annotations
 
 from src.domains.accounts.entities import Account, AccountRole, AccountStatus, Credential
-from src.domains.accounts.repositories.sql.models import (
+from src.domains.accounts.repositories.sql.orms import (
     AccountModel,
     AccountRoleModel,
     CredentialModel,
 )
 
-
-# ── Account ────────────────────────────────────────────────────────────────────
 
 def account_to_entity(model: AccountModel) -> Account:
     return Account(
@@ -37,8 +32,6 @@ def account_to_model(entity: Account, existing: AccountModel | None = None) -> A
     model.updated_at = entity.updated_at
     return model
 
-
-# ── Credential ─────────────────────────────────────────────────────────────────
 
 def credential_to_entity(model: CredentialModel) -> Credential:
     return Credential(
@@ -67,8 +60,6 @@ def credential_to_model(
     model.updated_at = entity.updated_at
     return model
 
-
-# ── AccountRole ────────────────────────────────────────────────────────────────
 
 def account_role_to_entity(model: AccountRoleModel) -> AccountRole:
     return AccountRole(

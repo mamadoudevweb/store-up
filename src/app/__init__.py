@@ -72,10 +72,10 @@ def create_app(env: str | None = None) -> Flask:
 def _import_models() -> None:
     """Import all ORM models so SQLAlchemy / Alembic can discover them."""
     # Models are imported here (side-effect import) so that Alembic sees all
-    # tables. Each domain's sql/models.py is imported below as domains are built.
+    # tables. Each domain's sql/orms/__init__.py is imported below as domains are built.
     # noqa: F401
     try:
-        import src.domains.accounts.repositories.sql.models  # noqa: F401
+        import src.domains.accounts.repositories.sql.orms  # noqa: F401
     except ImportError:
         pass
     try:
