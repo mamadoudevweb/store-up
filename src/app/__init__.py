@@ -1,0 +1,253 @@
+"""
+Flask application factory — the composition root.
+
+This is the ONLY place in the codebase that imports from both app/ and domains/.
+All wiring, DI, and registration happens here.
+"""
+from __future__ import annotations
+
+import os
+
+import redis as redis_lib
+from flask import Flask
+
+from src.config import get_config
+
+from .extensions import cors, db, jwt, limiter, migrate
+from .middleware import register_middleware
+
+
+def create_app(env: str | None = None) -> Flask:
+    """Create and configure the Flask application."""
+    env = env or os.getenv("FLASK_ENV", "development")
+    config = get_config(env)
+
+    app = Flask(__name__, static_folder=None)
+    app.config.from_mapping(config.to_flask_config())
+
+    # ── Initialise extensions ──────────────────────────────────────────────
+    db.init_app(app)
+    migrate.init_app(app, db)
+    jwt.init_app(app)
+    limiter.init_app(app)
+    cors.init_app(app, resources={r"/api/*": {"origins": config.ALLOWED_ORIGINS}})
+
+    # ── Redis client (injected into services that need it) ─────────────────
+    redis_client = redis_lib.from_url(config.REDIS_URL, decode_responses=True)
+    app.extensions["redis"] = redis_client
+
+    # ── Store config on app for CLI commands ──────────────────────────────
+    app.extensions["config"] = config
+
+    # ── Register middleware ────────────────────────────────────────────────
+    register_middleware(app)
+
+    # ── Register error handlers ────────────────────────────────────────────
+    _register_error_handlers(app)
+
+    # ── Register JWT callbacks ─────────────────────────────────────────────
+    _register_jwt_callbacks(app, redis_client)
+
+    # ── Import and register ORM models (for Alembic awareness) ────────────
+    with app.app_context():
+        _import_models()
+
+    # ── Register blueprints (all domain routes) ────────────────────────────
+    _register_blueprints(app)
+
+    # ── Register CLI commands ──────────────────────────────────────────────
+    _register_cli(app)
+
+    # ── Static file route for uploads ─────────────────────────────────────
+    _register_static_files(app, config.UPLOAD_FOLDER)
+
+    return app
+
+
+# ── Private helpers ────────────────────────────────────────────────────────────
+
+def _import_models() -> None:
+    """Import all ORM models so SQLAlchemy / Alembic can discover them."""
+    # Models are imported here (side-effect import) so that Alembic sees all
+    # tables. Each domain's sql/models.py is imported below as domains are built.
+    # noqa: F401
+    try:
+        import src.domains.accounts.repositories.sql.models  # noqa: F401
+    except ImportError:
+        pass
+    try:
+        import src.domains.auth.repositories.sql.models  # noqa: F401
+    except ImportError:
+        pass
+    try:
+        import src.domains.rbac.repositories.sql.models  # noqa: F401
+    except ImportError:
+        pass
+    try:
+        import src.domains.products.repositories.sql.models  # noqa: F401
+    except ImportError:
+        pass
+    try:
+        import src.domains.inventory.repositories.sql.models  # noqa: F401
+    except ImportError:
+        pass
+    try:
+        import src.domains.sales.repositories.sql.models  # noqa: F401
+    except ImportError:
+        pass
+    try:
+        import src.domains.notifications.repositories.sql.models  # noqa: F401
+    except ImportError:
+        pass
+
+
+def _register_blueprints(app: Flask) -> None:
+    """Register all domain route blueprints."""
+    try:
+        from src.domains.accounts.routes.v1 import router as accounts_router
+        app.register_blueprint(accounts_router, url_prefix="/api/v1")
+    except ImportError:
+        pass
+    try:
+        from src.domains.auth.routes.v1 import router as auth_router
+        app.register_blueprint(auth_router, url_prefix="/api/v1")
+    except ImportError:
+        pass
+    try:
+        from src.domains.rbac.routes.v1 import router as rbac_router
+        app.register_blueprint(rbac_router, url_prefix="/api/v1")
+    except ImportError:
+        pass
+    try:
+        from src.domains.products.routes.v1 import router as products_router
+        app.register_blueprint(products_router, url_prefix="/api/v1")
+    except ImportError:
+        pass
+    try:
+        from src.domains.inventory.routes.v1 import router as inventory_router
+        app.register_blueprint(inventory_router, url_prefix="/api/v1")
+    except ImportError:
+        pass
+    try:
+        from src.domains.sales.routes.v1 import router as sales_router
+        app.register_blueprint(sales_router, url_prefix="/api/v1")
+    except ImportError:
+        pass
+    try:
+        from src.domains.reports.routes.v1 import router as reports_router
+        app.register_blueprint(reports_router, url_prefix="/api/v1")
+    except ImportError:
+        pass
+    try:
+        from src.domains.notifications.routes.v1 import router as notifications_router
+        app.register_blueprint(notifications_router, url_prefix="/api/v1")
+    except ImportError:
+        pass
+
+
+def _register_error_handlers(app: Flask) -> None:
+    """Centralised error handler — converts AppError and HTTP errors to envelope."""
+    from flask import jsonify
+    from werkzeug.exceptions import HTTPException
+
+    from src.domains.shared.exceptions import AppError
+
+    @app.errorhandler(AppError)
+    def handle_app_error(exc: AppError):  # type: ignore[no-untyped-def]
+        return jsonify({
+            "status": "error",
+            "data": None,
+            "error": {"code": exc.code, "message": exc.message},
+            "meta": None,
+        }), exc.http_status
+
+    @app.errorhandler(HTTPException)
+    def handle_http_error(exc: HTTPException):  # type: ignore[no-untyped-def]
+        return jsonify({
+            "status": "error",
+            "data": None,
+            "error": {"code": exc.name.upper().replace(" ", "_"), "message": exc.description},
+            "meta": None,
+        }), exc.code
+
+    @app.errorhandler(Exception)
+    def handle_unexpected_error(exc: Exception):  # type: ignore[no-untyped-def]
+        app.logger.exception("Unhandled exception: %s", exc)
+        return jsonify({
+            "status": "error",
+            "data": None,
+            "error": {"code": "INTERNAL_SERVER_ERROR", "message": "An unexpected error occurred"},
+            "meta": None,
+        }), 500
+
+
+def _register_jwt_callbacks(app: Flask, redis_client: redis_lib.Redis) -> None:  # type: ignore[type-arg]
+    """Register JWT callbacks: token identity loader + blocklist check."""
+    from flask_jwt_extended import decode_token
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header: dict, jwt_payload: dict) -> bool:  # type: ignore[type-arg]
+        jti = jwt_payload["jti"]
+        token_in_redis = redis_client.get(f"jwt:blocklist:{jti}")
+        return token_in_redis is not None
+
+    @jwt.revoked_token_loader
+    def revoked_token_response(jwt_header: dict, jwt_payload: dict):  # type: ignore[type-arg]
+        from flask import jsonify
+        return jsonify({
+            "status": "error",
+            "data": None,
+            "error": {"code": "TOKEN_REVOKED", "message": "Token has been revoked"},
+            "meta": None,
+        }), 401
+
+    @jwt.expired_token_loader
+    def expired_token_response(jwt_header: dict, jwt_payload: dict):  # type: ignore[type-arg]
+        from flask import jsonify
+        return jsonify({
+            "status": "error",
+            "data": None,
+            "error": {"code": "TOKEN_EXPIRED", "message": "Token has expired"},
+            "meta": None,
+        }), 401
+
+    @jwt.invalid_token_loader
+    def invalid_token_response(error: str):  # type: ignore[no-untyped-def]
+        from flask import jsonify
+        return jsonify({
+            "status": "error",
+            "data": None,
+            "error": {"code": "TOKEN_INVALID", "message": "Token is invalid"},
+            "meta": None,
+        }), 422
+
+    @jwt.unauthorized_loader
+    def missing_token_response(error: str):  # type: ignore[no-untyped-def]
+        from flask import jsonify
+        return jsonify({
+            "status": "error",
+            "data": None,
+            "error": {"code": "TOKEN_MISSING", "message": "Authorization token is required"},
+            "meta": None,
+        }), 401
+
+
+def _register_cli(app: Flask) -> None:
+    """Register custom Flask CLI commands."""
+    try:
+        from src.domains.auth.cli import bootstrap_superuser
+        app.cli.add_command(bootstrap_superuser)
+    except ImportError:
+        pass
+
+
+def _register_static_files(app: Flask, upload_folder: str) -> None:
+    """Serve uploaded files via /files/<path:filename>."""
+    import os
+    from flask import send_from_directory
+
+    os.makedirs(upload_folder, exist_ok=True)
+
+    @app.route("/files/<path:filename>")
+    def serve_upload(filename: str):  # type: ignore[no-untyped-def]
+        return send_from_directory(os.path.abspath(upload_folder), filename)
