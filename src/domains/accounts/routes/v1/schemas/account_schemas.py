@@ -4,36 +4,46 @@ from __future__ import annotations
 from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 # ── Request schemas ────────────────────────────────────────────────────────────
 
 class CreateAccountRequest(BaseModel):
+    model_config = ConfigDict(strict=True)
+
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     birth_date: date | None = None
 
 
 class UpdateAccountRequest(BaseModel):
+    model_config = ConfigDict(strict=True)
+
     first_name: str | None = Field(None, min_length=1, max_length=100)
     last_name: str | None = Field(None, min_length=1, max_length=100)
     birth_date: date | None = None
 
 
 class SetCredentialsRequest(BaseModel):
+    model_config = ConfigDict(strict=True)
+
     username: str = Field(min_length=3, max_length=100)
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
 
 
 class UpdateCredentialsRequest(BaseModel):
+    model_config = ConfigDict(strict=True)
+
     username: str | None = Field(None, min_length=3, max_length=100)
     email: EmailStr | None = None
     password: str | None = Field(None, min_length=8, max_length=128)
 
 
 class AssignRoleRequest(BaseModel):
+    model_config = ConfigDict(strict=True)
+
     role_id: UUID
     domain_scope: str | None = None
 
@@ -41,6 +51,8 @@ class AssignRoleRequest(BaseModel):
 # ── Response schemas ───────────────────────────────────────────────────────────
 
 class AccountResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     first_name: str
     last_name: str
@@ -51,6 +63,8 @@ class AccountResponse(BaseModel):
 
 
 class CredentialResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     account_id: UUID
     username: str
@@ -62,6 +76,8 @@ class CredentialResponse(BaseModel):
 
 
 class AccountRoleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     account_id: UUID
     role_id: UUID
     domain_scope: str | None
