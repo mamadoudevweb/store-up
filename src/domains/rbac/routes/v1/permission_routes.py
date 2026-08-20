@@ -7,9 +7,9 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 
 from src.domains.rbac.repositories.filters import PermissionFilter
-from src.domains.rbac.routes.v1.helpers import get_rbac_service, serialize_permission
+from src.domains.rbac.routes.v1.helpers import get_rbac_service, serialize_permission, paginated
 from src.domains.rbac.routes.v1.schemas.rbac_schemas import CreatePermissionRequest
-from src.domains.shared.responses import paginated, success
+from src.core.routes.envelope import ok
 
 bp = Blueprint("permission", __name__)
 
@@ -23,7 +23,7 @@ def create_permission():  # type: ignore[no-untyped-def]
         action=body.action,
         description=body.description,
     )
-    return success(serialize_permission(result.data), status=201)
+    return ok(serialize_permission(result.data), status=201)
 
 
 @bp.get("")
@@ -35,7 +35,7 @@ def list_permissions():  # type: ignore[no-untyped-def]
         resource=request.args.get("resource"),
         action=request.args.get("action"),
     )
-    with get_rbac_service()._uow as uow:
+    with get_rbac_service()._uow_factory() as uow:
         result = uow.permissions.list(filters)
     return paginated(result, serialize_permission)
 
@@ -44,16 +44,16 @@ def list_permissions():  # type: ignore[no-untyped-def]
 @jwt_required()
 def get_permission(permission_id: UUID):  # type: ignore[no-untyped-def]
     result = get_rbac_service().permission.get_permission(permission_id)
-    return success(serialize_permission(result.data))
+    return ok(serialize_permission(result.data))
 
 
 @bp.delete("/<uuid:permission_id>")
 @jwt_required()
 def delete_permission(permission_id: UUID):  # type: ignore[no-untyped-def]
     svc = get_rbac_service()
-    with svc._uow as uow:
-        perm = uow.permissions.get(PermissionFilter(id=permission_id))
+    with svc._uow_factory() as uow:
+        perm = uow.permissions.get(permission_id)
         if perm:
             uow.permissions.delete(perm)
             uow.commit()
-    return success(None)
+    return ok(None)

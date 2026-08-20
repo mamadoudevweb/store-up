@@ -2,17 +2,16 @@
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
+
+from src.core.entities.base_entity import Entity
 
 
-@dataclass
-class Permission:
+@dataclass(kw_only=True)
+class Permission(Entity):
     resource: str      # e.g., 'products', 'accounts'
     action: str        # e.g., 'read', 'write', 'delete'
     description: str | None = None
-    id: uuid.UUID = field(default_factory=uuid.uuid4)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def name(self) -> str:

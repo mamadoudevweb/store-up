@@ -2,17 +2,16 @@
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
+from src.core.entities.base_entity import Entity
 
-@dataclass
-class Role:
+
+@dataclass(kw_only=True)
+class Role(Entity):
     name: str
     description: str | None = None
-    id: uuid.UUID = field(default_factory=uuid.uuid4)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def update(self, description: str | None = None) -> None:
         if description is not None:
