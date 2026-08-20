@@ -4,17 +4,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 from datetime import datetime, timezone
+from typing import Callable
 
 import bcrypt
 from flask_jwt_extended import create_access_token, create_refresh_token, decode_token
 
-from src.domains.accounts.repositories.base_uow import BaseAccountUnitOfWork
-from src.domains.accounts.repositories.filters import CredentialFilter, AccountFilter
+from src.core.services.base_service import BaseService
+from src.core.services.result import ServiceResult
+from src.core.repositories.base_uow import BaseUnitOfWork
+from src.core.events.dispatcher import EventDispatcher
 from src.domains.auth.events import UserLoggedIn, UserLoggedOut
 from src.domains.auth.exceptions import InvalidCredentials
 from src.domains.auth.repositories.base_denylist import BaseTokenDenylist
-from src.domains.shared.events import EventBus
-from src.domains.shared.service_result import ServiceResult
 
 
 @dataclass
@@ -23,21 +24,21 @@ class TokenPair:
     refresh_token: str
 
 
-class AuthService:
+class AuthService(BaseService):
     def __init__(
         self,
-        account_uow: BaseAccountUnitOfWork,
+        uow_factory: Callable[[], BaseUnitOfWork],
         denylist: BaseTokenDenylist,
-        event_bus: EventBus,
+        dispatcher: EventDispatcher,
     ) -> None:
-        self._uow = account_uow
+        super().__init__(uow_factory)
         self._denylist = denylist
-        self._bus = event_bus
+        self._dispatcher = dispatcher
 
     def login(self, username: str, password: str, ip_address: str | None = None) -> ServiceResult[TokenPair]:
         """Validates credentials and returns JWT tokens."""
-        with self._uow as uow:
-            cred = uow.credentials.get(CredentialFilter(username_or_email=username))
+        with self._uow_factory() as uow:
+            cred = uow.credentials.get(username_or_email=username)
             if not cred:
                 raise InvalidCredentials()
 
@@ -45,7 +46,7 @@ class AuthService:
             if not bcrypt.checkpw(password.encode(), cred.password_hash.encode()):
                 raise InvalidCredentials()
 
-            account = uow.accounts.get(AccountFilter(id=cred.account_id))
+            account = uow.accounts.get(cred.account_id)
             if not account or not account.is_active():
                 raise InvalidCredentials("Account is inactive or suspended.")
 
@@ -57,26 +58,27 @@ class AuthService:
 
             # Update last login
             cred.last_login_at = datetime.now(timezone.utc)
+            cred.register_event(
+                UserLoggedIn(account_id=account.id, username=cred.username, ip_address=ip_address)
+            )
             uow.credentials.update(cred)
+            uow.track(cred)
             uow.commit()
 
-        self._bus.publish(
-            UserLoggedIn(account_id=account.id, username=cred.username, ip_address=ip_address)
-        )
-        return ServiceResult.ok(TokenPair(access_token, refresh_token))
+        return ServiceResult(data=TokenPair(access_token, refresh_token))
 
     def logout(self, jti: str, exp: int) -> ServiceResult[None]:
         """Revokes an access token by placing it on the denylist."""
         self._denylist.add(jti, exp)
-        self._bus.publish(UserLoggedOut(jti=jti))
-        return ServiceResult.ok(None)
+        self._dispatcher.dispatch([UserLoggedOut(jti=jti)])
+        return ServiceResult(data=None)
 
     def refresh(self, identity: str) -> ServiceResult[str]:
         """Issues a new access token based on a refresh token's identity."""
-        with self._uow as uow:
-            account = uow.accounts.get(AccountFilter(id=UUID(identity)))
+        with self._uow_factory() as uow:
+            account = uow.accounts.get(UUID(identity))
             if not account or not account.is_active():
                 raise InvalidCredentials("Account is inactive or suspended.")
                 
         access_token = create_access_token(identity=identity)
-        return ServiceResult.ok(access_token)
+        return ServiceResult(data=access_token)
