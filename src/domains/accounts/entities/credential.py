@@ -5,11 +5,11 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
+from src.core.entities.base_entity import Entity
 
-@dataclass
-class Credential:
+@dataclass(kw_only=True)
+class Credential(Entity):
     """Login credential entity — separated from Account identity."""
-
     id: UUID
     account_id: UUID
     username: str
@@ -18,8 +18,6 @@ class Credential:
     last_login_at: datetime | None
     created_at: datetime
     updated_at: datetime
-
-    _events: list = field(default_factory=list, repr=False, compare=False)
 
     @classmethod
     def create(
@@ -41,7 +39,7 @@ class Credential:
             updated_at=now,
         )
         from src.domains.accounts.events import CredentialSet
-        cred._events.append(CredentialSet(account_id=account_id, credential_id=cred.id))
+        cred.register_event(CredentialSet(account_id=account_id, credential_id=cred.id))
         return cred
 
     def update(
@@ -58,12 +56,7 @@ class Credential:
             self.password_hash = password_hash
         self.updated_at = datetime.now(timezone.utc)
         from src.domains.accounts.events import CredentialUpdated
-        self._events.append(CredentialUpdated(account_id=self.account_id))
+        self.register_event(CredentialUpdated(account_id=self.account_id))
 
     def record_login(self) -> None:
         self.last_login_at = datetime.now(timezone.utc)
-
-    def pull_events(self) -> list:
-        events = list(self._events)
-        self._events.clear()
-        return events

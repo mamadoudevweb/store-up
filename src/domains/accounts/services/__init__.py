@@ -1,20 +1,21 @@
-"""Accounts services package — AccountService aggregates sub-services via properties."""
+"""Accounts services package — AccountDomainService aggregates sub-services via properties."""
 from __future__ import annotations
 
-from src.domains.accounts.repositories.base_uow import BaseAccountUnitOfWork
+from typing import Callable
+from src.core.services.base_service import BaseService
+from src.core.repositories.base_uow import BaseUnitOfWork
 from src.domains.accounts.services import account as account_svc
 from src.domains.accounts.services import account_role as role_svc
 from src.domains.accounts.services import credential as credential_svc
-from src.domains.shared.events import EventBus
 
-
-class AccountService:
+class AccountDomainService(BaseService):
     """Facade aggregating operations on accounts, credentials, and roles."""
 
-    def __init__(self, uow: BaseAccountUnitOfWork, event_bus: EventBus) -> None:
-        self._account = account_svc.Service(uow, event_bus)
-        self._credential = credential_svc.Service(uow, event_bus)
-        self._role = role_svc.Service(uow, event_bus)
+    def __init__(self, uow_factory: Callable[[], BaseUnitOfWork]) -> None:
+        super().__init__(uow_factory)
+        self._account = account_svc.Service(uow_factory)
+        self._credential = credential_svc.Service(uow_factory)
+        self._role = role_svc.Service(uow_factory)
 
     @property
     def account(self) -> account_svc.Service:

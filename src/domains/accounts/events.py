@@ -4,50 +4,36 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
-from src.domains.shared.events import DomainEvent
+from src.core.entities.events import DomainEvent
 
-
-@dataclass
+@dataclass(kw_only=True, frozen=True)
 class AccountCreated(DomainEvent):
-    event_type: str = "accounts.account.created"  # type: ignore[assignment]
-    account_id: UUID = None  # type: ignore[assignment]
+    account_id: UUID
 
-
-@dataclass
+@dataclass(kw_only=True, frozen=True)
 class AccountUpdated(DomainEvent):
-    event_type: str = "accounts.account.updated"  # type: ignore[assignment]
-    account_id: UUID = None  # type: ignore[assignment]
+    account_id: UUID
 
-
-@dataclass
+@dataclass(kw_only=True, frozen=True)
 class AccountSuspended(DomainEvent):
-    event_type: str = "accounts.account.suspended"  # type: ignore[assignment]
-    account_id: UUID = None  # type: ignore[assignment]
+    account_id: UUID
 
-
-@dataclass
+@dataclass(kw_only=True, frozen=True)
 class CredentialSet(DomainEvent):
-    event_type: str = "accounts.credential.set"  # type: ignore[assignment]
-    account_id: UUID = None  # type: ignore[assignment]
-    credential_id: UUID = None  # type: ignore[assignment]
+    account_id: UUID
+    credential_id: UUID
 
-
-@dataclass
+@dataclass(kw_only=True, frozen=True)
 class CredentialUpdated(DomainEvent):
-    event_type: str = "accounts.credential.updated"  # type: ignore[assignment]
-    account_id: UUID = None  # type: ignore[assignment]
+    account_id: UUID
 
-
-@dataclass
+@dataclass(kw_only=True, frozen=True)
 class RoleAssigned(DomainEvent):
-    event_type: str = "accounts.role.assigned"  # type: ignore[assignment]
-    account_id: UUID = None  # type: ignore[assignment]
-    role_id: UUID = None  # type: ignore[assignment]
+    account_id: UUID
+    role_id: UUID
     domain_scope: str | None = None
 
-
-@dataclass
+@dataclass(kw_only=True, frozen=True)
 class RoleRevoked(DomainEvent):
-    event_type: str = "accounts.role.revoked"  # type: ignore[assignment]
-    account_id: UUID = None  # type: ignore[assignment]
-    role_id: UUID = None  # type: ignore[assignment]
+    account_id: UUID
+    role_id: UUID

@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 from uuid import UUID
-
+from typing import Callable
 import bcrypt
 
+from src.core.services.base_service import BaseService
+from src.core.services.result import ServiceResult
+from src.core.repositories.base_uow import BaseUnitOfWork
 from src.domains.accounts.entities import Credential
 from src.domains.accounts.exceptions import (
     AccountNotFound,
@@ -14,16 +17,11 @@ from src.domains.accounts.exceptions import (
     EmailConflict,
     UsernameConflict,
 )
-from src.domains.accounts.repositories.filters import AccountFilter, CredentialFilter
-from src.domains.accounts.repositories.base_uow import BaseAccountUnitOfWork
-from src.domains.shared.events import EventBus
-from src.domains.shared.service_result import ServiceResult
+from src.domains.accounts.repositories.filters import CredentialFilter
 
-
-class Service:
-    def __init__(self, uow: BaseAccountUnitOfWork, event_bus: EventBus) -> None:
-        self._uow = uow
-        self._bus = event_bus
+class Service(BaseService):
+    def __init__(self, uow_factory: Callable[[], BaseUnitOfWork]) -> None:
+        super().__init__(uow_factory)
 
     def set_credentials(
         self,
@@ -32,20 +30,20 @@ class Service:
         email: str,
         password: str,
     ) -> ServiceResult[Credential]:
-        with self._uow as uow:
-            account = uow.accounts.get(AccountFilter(id=account_id))
+        with self._uow_factory() as uow:
+            account = uow.accounts.get(account_id)
             if not account:
                 raise AccountNotFound()
             if not account.is_active():
                 raise AccountSuspendedError()
                 
-            if uow.credentials.exists(CredentialFilter(account_id=account_id)):
+            if uow.credentials.exists(account_id=account_id):
                 raise CredentialAlreadyExists()
                 
-            if uow.credentials.exists(CredentialFilter(username=username)):
+            if uow.credentials.exists(username=username):
                 raise UsernameConflict()
                 
-            if uow.credentials.exists(CredentialFilter(email=email)):
+            if uow.credentials.exists(email=email):
                 raise EmailConflict()
                 
             password_hash = bcrypt.hashpw(
@@ -53,16 +51,16 @@ class Service:
             ).decode()
             cred = Credential.create(account_id, username, email, password_hash)
             uow.credentials.add(cred)
+            uow.track(cred)
             uow.commit()
-        self._bus.publish_all(cred.pull_events())
-        return ServiceResult.ok(cred)
+        return ServiceResult(data=cred)
 
     def get_credentials(self, account_id: UUID) -> ServiceResult[Credential]:
-        with self._uow as uow:
+        with self._uow_factory() as uow:
             cred = uow.credentials.get(CredentialFilter(account_id=account_id))
         if not cred:
             raise CredentialNotFound()
-        return ServiceResult.ok(cred)
+        return ServiceResult(data=cred)
 
     def update_credentials(
         self,
@@ -71,16 +69,16 @@ class Service:
         email: str | None = None,
         password: str | None = None,
     ) -> ServiceResult[Credential]:
-        with self._uow as uow:
+        with self._uow_factory() as uow:
             cred = uow.credentials.get(CredentialFilter(account_id=account_id))
             if not cred:
                 raise CredentialNotFound()
             
             if username and username != cred.username:
-                if uow.credentials.exists(CredentialFilter(username=username)):
+                if uow.credentials.exists(username=username):
                     raise UsernameConflict()
             if email and email != cred.email:
-                if uow.credentials.exists(CredentialFilter(email=email)):
+                if uow.credentials.exists(email=email):
                     raise EmailConflict()
                     
             password_hash: str | None = None
@@ -88,6 +86,6 @@ class Service:
                 password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
             cred.update(username, email, password_hash)
             uow.credentials.update(cred)
+            uow.track(cred)
             uow.commit()
-        self._bus.publish_all(cred.pull_events())
-        return ServiceResult.ok(cred)
+        return ServiceResult(data=cred)

@@ -6,16 +6,15 @@ from datetime import date, datetime, timezone
 from enum import Enum
 from uuid import UUID, uuid4
 
+from src.core.entities.base_entity import Entity
 
 class AccountStatus(str, Enum):
     ACTIVE = "active"
     SUSPENDED = "suspended"
 
-
-@dataclass
-class Account:
+@dataclass(kw_only=True)
+class Account(Entity):
     """Identity entity — no login info, no roles."""
-
     id: UUID
     first_name: str
     last_name: str
@@ -23,8 +22,6 @@ class Account:
     status: AccountStatus
     created_at: datetime
     updated_at: datetime
-
-    _events: list = field(default_factory=list, repr=False, compare=False)
 
     @classmethod
     def create(
@@ -44,14 +41,14 @@ class Account:
             updated_at=now,
         )
         from src.domains.accounts.events import AccountCreated
-        account._events.append(AccountCreated(account_id=account.id))
+        account.register_event(AccountCreated(account_id=account.id))
         return account
 
     def suspend(self) -> None:
         self.status = AccountStatus.SUSPENDED
         self.updated_at = datetime.now(timezone.utc)
         from src.domains.accounts.events import AccountSuspended
-        self._events.append(AccountSuspended(account_id=self.id))
+        self.register_event(AccountSuspended(account_id=self.id))
 
     def update(
         self,
@@ -67,12 +64,7 @@ class Account:
             self.birth_date = birth_date
         self.updated_at = datetime.now(timezone.utc)
         from src.domains.accounts.events import AccountUpdated
-        self._events.append(AccountUpdated(account_id=self.id))
-
-    def pull_events(self) -> list:
-        events = list(self._events)
-        self._events.clear()
-        return events
+        self.register_event(AccountUpdated(account_id=self.id))
 
     @property
     def full_name(self) -> str:
@@ -80,3 +72,4 @@ class Account:
 
     def is_active(self) -> bool:
         return self.status == AccountStatus.ACTIVE
+

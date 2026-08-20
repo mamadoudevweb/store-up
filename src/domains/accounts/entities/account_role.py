@@ -5,11 +5,11 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from uuid import UUID
 
+from src.core.entities.base_entity import Entity
 
-@dataclass
-class AccountRole:
+@dataclass(kw_only=True)
+class AccountRole(Entity):
     """Association between an Account and a Role, optionally scoped to a domain."""
-
     account_id: UUID
     role_id: UUID
     domain_scope: str | None
