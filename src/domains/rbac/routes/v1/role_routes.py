@@ -58,10 +58,5 @@ def get_role(role_id: UUID):  # type: ignore[no-untyped-def]
 def delete_role(role_id: UUID):  # type: ignore[no-untyped-def]
     actor = get_current_actor()
     svc = get_rbac_service()
-    svc.role._authorize(actor, "rbac", "role", "delete")
-    with svc._uow_factory() as uow:
-        role = uow.roles.get(role_id)
-        if role:
-            uow.roles.delete(role)
-            uow.commit()
+    svc.role.delete_role(actor, role_id)
     return ok(None)

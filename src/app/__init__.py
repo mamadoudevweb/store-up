@@ -6,7 +6,7 @@ import redis as redis_lib
 
 from src.config import get_config
 from src.app.extensions import db, migrate, jwt, limiter, cors
-from src.app.middlewares import enforce_allowed_domain, enforce_json_content_type
+from src.app.middlewares import enforce_allowed_domain, enforce_json_content_type, setup_jwt_blocklist
 from src.app.error_handlers import register_error_handlers
 from src.app.uow import build_uow_factory
 from src.app.domain_service_builder import build_domain_service
@@ -21,9 +21,8 @@ def build_session_factory(db) -> Callable[[], Session]:
     return sessionmaker(bind=db.engine)
 
 def register_domain_event_handlers(dispatcher: EventDispatcher, domain_service: DomainService) -> None:
-    # from src.domains.notifications import event_handlers as notifications_event_handlers
-    # notifications_event_handlers.register(dispatcher, domain_service.notifications)
-    pass
+    from src.domains.inventory import event_handlers as inventory_event_handlers
+    inventory_event_handlers.register(dispatcher, domain_service)
 
 def create_app(env: str | None = None) -> Flask:
     env = env or os.getenv("FLASK_ENV", "development")
@@ -47,6 +46,7 @@ def create_app(env: str | None = None) -> Flask:
 
     enforce_allowed_domain(app)
     enforce_json_content_type(app)
+    setup_jwt_blocklist(app)
     register_error_handlers(app)
 
     dispatcher = EventDispatcher()
@@ -63,6 +63,7 @@ def create_app(env: str | None = None) -> Flask:
             import src.domains.auth.repositories.sql.models
             import src.domains.rbac.repositories.sql.orms
             import src.domains.catalog.repositories.sql.orms
+            import src.domains.inventory.repositories.sql.orms
         except ImportError:
             pass
 

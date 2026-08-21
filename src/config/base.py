@@ -15,7 +15,7 @@ class BaseConfig(BaseSettings):
 
     # ── Flask ──────────────────────────────────────────────────────────────
     FLASK_ENV: str = "development"
-    SECRET_KEY: str = "dev-secret-key-change-in-prod"
+    SECRET_KEY: str = "dev-secret-key-change-in-production-needs-to-be-at-least-32-bytes"
     DEBUG: bool = False
     TESTING: bool = False
 

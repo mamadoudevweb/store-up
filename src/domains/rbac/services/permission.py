@@ -65,3 +65,16 @@ class PermissionService(BaseService):
                     return ServiceResult(data=True)
 
             return ServiceResult(data=False)
+
+    def delete_permission(self, actor: SupportsPermissionCheck, permission_id: str | uuid.UUID) -> ServiceResult[None]:
+        self._authorize(actor, "rbac", "permission", "delete")
+        if isinstance(permission_id, str):
+            permission_id = uuid.UUID(permission_id)
+        
+        with self._uow_factory() as uow:
+            permission = uow.permissions.get(permission_id)
+            if not permission:
+                raise PermissionNotFound(f"Permission '{permission_id}' not found.")
+            uow.permissions.delete(permission)
+            uow.commit()
+            return ServiceResult(data=None)

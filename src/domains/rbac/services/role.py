@@ -39,3 +39,16 @@ class RoleService(BaseService):
             if not role:
                 raise RoleNotFound(f"Role '{role_id}' not found.")
             return ServiceResult(data=role)
+
+    def delete_role(self, actor: SupportsPermissionCheck, role_id: str | uuid.UUID) -> ServiceResult[None]:
+        self._authorize(actor, "rbac", "role", "delete")
+        if isinstance(role_id, str):
+            role_id = uuid.UUID(role_id)
+        
+        with self._uow_factory() as uow:
+            role = uow.roles.get(role_id)
+            if not role:
+                raise RoleNotFound(f"Role '{role_id}' not found.")
+            uow.roles.delete(role)
+            uow.commit()
+            return ServiceResult(data=None)

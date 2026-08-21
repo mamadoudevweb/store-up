@@ -9,6 +9,9 @@ from src.domains.auth.services.auth import AuthService
 from src.domains.auth.repositories.redis_denylist import RedisTokenDenylist
 from src.domains.rbac.services import RbacDomainService
 from src.domains.catalog.services import CatalogDomainService
+from src.domains.inventory.services import InventoryDomainService
+from src.domains.inventory.services.inventory_item_service import InventoryItemService
+from src.domains.inventory.services.stock_movement_service import StockMovementService
 
 
 def build_domain_service(
@@ -22,4 +25,8 @@ def build_domain_service(
         auth=AuthService(uow_factory, RedisTokenDenylist(redis_client), dispatcher),
         rbac=RbacDomainService(uow_factory),
         catalog=CatalogDomainService(uow_factory, upload_folder),
+        inventory=InventoryDomainService(
+            item=InventoryItemService(uow_factory),
+            movement=StockMovementService(uow_factory),
+        ),
     )

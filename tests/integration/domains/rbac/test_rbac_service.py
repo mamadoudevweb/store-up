@@ -27,11 +27,13 @@ def test_create_and_get_role(rbac_service, mock_actor):
 
 
 def test_create_permission_and_assign(rbac_service, mock_actor):
-    role_res = rbac_service.role.create_role(mock_actor, "editor", "Editor role")
+    import uuid
+    unique_suffix = uuid.uuid4().hex[:8]
+    role_res = rbac_service.role.create_role(mock_actor, f"editor_{unique_suffix}", "Editor role")
     role_id = role_res.data.id
 
     perm_res = rbac_service.permission.create_permission(
-        mock_actor, "catalog:product", "create", "Create products"
+        mock_actor, f"catalog:product:{unique_suffix}", "create", "Create products"
     )
     perm_id = perm_res.data.id
 
@@ -43,12 +45,100 @@ def test_create_permission_and_assign(rbac_service, mock_actor):
     list_res = rbac_service.permission.list_role_permissions(mock_actor, role_id)
     assert list_res.success
     perms = list_res.data
-    assert len(perms) == 1
-    assert perms[0].action == "create"
+    assert len(perms.items) == 1
+    assert perms.items[0].action == "create"
 
     # Check permission logic directly
-    has_perm = rbac_service.permission.check_roles_have_permission([role_id], "catalog:product", "create")
-    assert has_perm is True
+    has_perm = rbac_service.permission.check_roles_have_permission([role_id], f"catalog:product:{unique_suffix}", "create")
+    assert has_perm.data is True
 
-    has_perm2 = rbac_service.permission.check_roles_have_permission([role_id], "catalog:product", "delete")
-    assert has_perm2 is False
+    has_perm2 = rbac_service.permission.check_roles_have_permission([role_id], f"catalog:product:{unique_suffix}", "delete")
+    assert has_perm2.data is False
+
+
+def test_role_errors_and_delete(rbac_service, mock_actor):
+    import uuid
+    unique_suffix = uuid.uuid4().hex[:8]
+    # Create role
+    res = rbac_service.role.create_role(mock_actor, f"dup_{unique_suffix}", "desc")
+    assert res.success
+    role_id = res.data.id
+
+    # Duplicate name should fail
+    from src.domains.rbac.exceptions import RoleAlreadyExists, RoleNotFound
+    with pytest.raises(RoleAlreadyExists):
+        rbac_service.role.create_role(mock_actor, f"dup_{unique_suffix}", "desc")
+
+    # Get non-existent
+    with pytest.raises(RoleNotFound):
+        rbac_service.role.get_role(mock_actor, uuid.uuid4())
+
+    # Delete
+    del_res = rbac_service.role.delete_role(mock_actor, role_id)
+    assert del_res.success
+    
+    # Get after delete
+    with pytest.raises(RoleNotFound):
+        rbac_service.role.get_role(mock_actor, role_id)
+
+    # Delete non-existent
+    with pytest.raises(RoleNotFound):
+        rbac_service.role.delete_role(mock_actor, role_id)
+
+
+def test_permission_errors_and_delete(rbac_service, mock_actor):
+    import uuid
+    from src.domains.rbac.exceptions import PermissionAlreadyExists, PermissionNotFound
+    unique_suffix = uuid.uuid4().hex[:8]
+    
+    # Create permission
+    res = rbac_service.permission.create_permission(mock_actor, f"res:{unique_suffix}", "read", "desc")
+    assert res.success
+    perm_id = res.data.id
+
+    # Duplicate should fail
+    with pytest.raises(PermissionAlreadyExists):
+        rbac_service.permission.create_permission(mock_actor, f"res:{unique_suffix}", "read", "desc")
+
+    # Get non-existent
+    with pytest.raises(PermissionNotFound):
+        rbac_service.permission.get_permission(mock_actor, uuid.uuid4())
+
+    # Delete
+    del_res = rbac_service.permission.delete_permission(mock_actor, perm_id)
+    assert del_res.success
+
+    # Get after delete
+    with pytest.raises(PermissionNotFound):
+        rbac_service.permission.get_permission(mock_actor, perm_id)
+
+    # Delete non-existent
+    with pytest.raises(PermissionNotFound):
+        rbac_service.permission.delete_permission(mock_actor, perm_id)
+
+
+def test_role_permission_unassign(rbac_service, mock_actor):
+    import uuid
+    unique_suffix = uuid.uuid4().hex[:8]
+    
+    role = rbac_service.role.create_role(mock_actor, f"role_{unique_suffix}", "desc").data
+    perm = rbac_service.permission.create_permission(mock_actor, f"res_{unique_suffix}", "write", "desc").data
+    
+    rbac_service.role_permission.assign(mock_actor, role.id, perm.id)
+    assert len(rbac_service.permission.list_role_permissions(mock_actor, role.id).data.items) == 1
+    
+    # Unassign
+    res = rbac_service.role_permission.revoke(mock_actor, role.id, perm.id)
+    assert res.success
+    assert len(rbac_service.permission.list_role_permissions(mock_actor, role.id).data.items) == 0
+
+    # Unassign non-existent
+    from src.domains.rbac.exceptions import RolePermissionNotFound
+    with pytest.raises(RolePermissionNotFound):
+        rbac_service.role_permission.revoke(mock_actor, role.id, perm.id)
+
+    # Assign duplicate
+    rbac_service.role_permission.assign(mock_actor, role.id, perm.id)
+    from src.domains.rbac.exceptions import RolePermissionAlreadyExists
+    with pytest.raises(RolePermissionAlreadyExists):
+        rbac_service.role_permission.assign(mock_actor, role.id, perm.id)

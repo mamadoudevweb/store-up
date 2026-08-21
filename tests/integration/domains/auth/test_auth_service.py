@@ -28,12 +28,9 @@ def auth_service(uow_factory):
     )
 
 
-def test_auth_login_success(auth_service, uow_factory, mock_actor):
+def test_auth_login_success(app, auth_service, uow_factory, mock_actor):
     # Setup test account
-    accounts_service = AccountDomainService(
-        account=AccountService(uow_factory),
-        credential=CredentialService(uow_factory)
-    )
+    accounts_service = AccountDomainService(uow_factory)
     account_id = accounts_service.account.create_account("Alice", "Auth").data.id
     accounts_service.credential.set_credentials(
         account_id, "alice", "alice@example.com", "password123"
@@ -42,16 +39,13 @@ def test_auth_login_success(auth_service, uow_factory, mock_actor):
     # Login via Auth Service
     res = auth_service.login("alice", "password123")
     assert res.success
-    assert "access_token" in res.data
-    assert "refresh_token" in res.data
+    assert hasattr(res.data, "access_token")
+    assert hasattr(res.data, "refresh_token")
 
 
 def test_auth_login_invalid(auth_service, uow_factory, mock_actor):
     # Setup test account
-    accounts_service = AccountDomainService(
-        account=AccountService(uow_factory),
-        credential=CredentialService(uow_factory)
-    )
+    accounts_service = AccountDomainService(uow_factory)
     account_id = accounts_service.account.create_account("Bob", "Auth").data.id
     accounts_service.credential.set_credentials(
         account_id, "bob", "bob@example.com", "password123"
@@ -73,3 +67,26 @@ def test_auth_logout(auth_service):
     
     # Check denylist
     assert auth_service._denylist.is_revoked("jti-12345")
+
+
+def test_auth_login_suspended(auth_service, uow_factory, mock_actor):
+    accounts_service = AccountDomainService(uow_factory)
+    account_id = accounts_service.account.create_account("Suspended", "User").data.id
+    accounts_service.credential.set_credentials(
+        account_id, "suspended_user", "susp@example.com", "password123"
+    )
+    # Suspend it
+    accounts_service.account.suspend_account(mock_actor, account_id)
+
+    with pytest.raises(InvalidCredentials, match="Account is inactive or suspended."):
+        auth_service.login("suspended_user", "password123")
+
+
+def test_auth_refresh_suspended(auth_service, uow_factory, mock_actor):
+    accounts_service = AccountDomainService(uow_factory)
+    account_id = accounts_service.account.create_account("Suspended2", "User").data.id
+    # Suspend it
+    accounts_service.account.suspend_account(mock_actor, account_id)
+
+    with pytest.raises(InvalidCredentials, match="Account is inactive or suspended."):
+        auth_service.refresh(str(account_id))

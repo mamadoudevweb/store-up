@@ -25,3 +25,9 @@ def register_routes(app: Flask) -> None:
         app.register_blueprint(catalog_router, url_prefix="/api/v1")
     except ImportError:
         pass
+
+    try:
+        from src.domains.inventory.routes.v1 import router as inventory_router
+        app.register_blueprint(inventory_router, url_prefix="/api/v1/inventory")
+    except ImportError:
+        pass

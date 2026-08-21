@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 # ── Request schemas ────────────────────────────────────────────────────────────
 
 class CreateAccountRequest(BaseModel):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
@@ -18,7 +18,7 @@ class CreateAccountRequest(BaseModel):
 
 
 class UpdateAccountRequest(BaseModel):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
     first_name: str | None = Field(None, min_length=1, max_length=100)
     last_name: str | None = Field(None, min_length=1, max_length=100)
@@ -26,7 +26,7 @@ class UpdateAccountRequest(BaseModel):
 
 
 class SetCredentialsRequest(BaseModel):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
     username: str = Field(min_length=3, max_length=100)
     email: EmailStr
@@ -34,7 +34,7 @@ class SetCredentialsRequest(BaseModel):
 
 
 class UpdateCredentialsRequest(BaseModel):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
     username: str | None = Field(None, min_length=3, max_length=100)
     email: EmailStr | None = None
@@ -42,7 +42,7 @@ class UpdateCredentialsRequest(BaseModel):
 
 
 class AssignRoleRequest(BaseModel):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
     role_id: UUID
     domain_scope: str | None = None

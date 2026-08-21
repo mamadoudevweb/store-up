@@ -17,6 +17,9 @@ from src.domains.catalog.repositories.sql.product_repository import SqlProductRe
 from src.domains.catalog.repositories.sql.brand_repository import SqlBrandRepository
 from src.domains.catalog.repositories.sql.category_repository import SqlCategoryRepository
 from src.domains.catalog.repositories.sql.product_image_repository import SqlProductImageRepository
+# Inventory
+from src.domains.inventory.repositories.sql.inventory_item_repository import SqlInventoryItemRepository
+from src.domains.inventory.repositories.sql.stock_movement_repository import SqlStockMovementRepository
 
 REPOSITORY_CLASSES: dict[str, type[Any]] = {
     # Account domain
@@ -34,6 +37,10 @@ REPOSITORY_CLASSES: dict[str, type[Any]] = {
     "brands": SqlBrandRepository,
     "categories": SqlCategoryRepository,
     "product_images": SqlProductImageRepository,
+
+    # Inventory domain
+    "inventory_items": SqlInventoryItemRepository,
+    "stock_movements": SqlStockMovementRepository,
 }
 
 def build_uow_factory(session_factory: Callable[[], Session], dispatcher: EventDispatcher) -> Callable[[], SqlUnitOfWork]:

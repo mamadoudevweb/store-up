@@ -58,10 +58,5 @@ def get_permission(permission_id: UUID):  # type: ignore[no-untyped-def]
 def delete_permission(permission_id: UUID):  # type: ignore[no-untyped-def]
     actor = get_current_actor()
     svc = get_rbac_service()
-    svc.permission._authorize(actor, "rbac", "permission", "delete")
-    with svc._uow_factory() as uow:
-        perm = uow.permissions.get(permission_id)
-        if perm:
-            uow.permissions.delete(perm)
-            uow.commit()
+    svc.permission.delete_permission(actor, permission_id)
     return ok(None)
