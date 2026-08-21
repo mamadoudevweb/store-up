@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from typing import Callable
 
-from src.core.services.base_service import BaseService
+from src.core.services.base_service import BaseService, SupportsPermissionCheck
 from src.core.services.result import ServiceResult
 from src.core.repositories.base_uow import BaseUnitOfWork
 from src.domains.rbac.entities import RolePermission
@@ -17,7 +17,8 @@ class RolePermissionService(BaseService):
     def __init__(self, uow_factory: Callable[[], BaseUnitOfWork]) -> None:
         super().__init__(uow_factory)
 
-    def assign(self, role_id: str | uuid.UUID, permission_id: str | uuid.UUID) -> ServiceResult[RolePermission]:
+    def assign(self, actor: SupportsPermissionCheck, role_id: str | uuid.UUID, permission_id: str | uuid.UUID) -> ServiceResult[RolePermission]:
+        self._authorize(actor, "rbac", "role_permission", "assign")
         if isinstance(role_id, str):
             role_id = uuid.UUID(role_id)
         if isinstance(permission_id, str):
@@ -40,7 +41,8 @@ class RolePermissionService(BaseService):
             existing = uow.role_permissions.get(RolePermissionFilter(role_id=role_id, permission_id=permission_id))
             return ServiceResult(data=existing)
 
-    def revoke(self, role_id: str | uuid.UUID, permission_id: str | uuid.UUID) -> ServiceResult[None]:
+    def revoke(self, actor: SupportsPermissionCheck, role_id: str | uuid.UUID, permission_id: str | uuid.UUID) -> ServiceResult[None]:
+        self._authorize(actor, "rbac", "role_permission", "revoke")
         if isinstance(role_id, str):
             role_id = uuid.UUID(role_id)
         if isinstance(permission_id, str):
@@ -57,7 +59,8 @@ class RolePermissionService(BaseService):
 
             return ServiceResult(data=None)
 
-    def list_for_role(self, role_id: str | uuid.UUID) -> ServiceResult[list[RolePermission]]:
+    def list_for_role(self, actor: SupportsPermissionCheck, role_id: str | uuid.UUID) -> ServiceResult[list[RolePermission]]:
+        self._authorize(actor, "rbac", "role_permission", "list")
         if isinstance(role_id, str):
             role_id = uuid.UUID(role_id)
 

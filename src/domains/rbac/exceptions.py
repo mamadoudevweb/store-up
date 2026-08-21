@@ -1,7 +1,7 @@
 """RBAC domain exceptions."""
 from __future__ import annotations
 
-from src.domains.shared.exceptions import AppError
+from src.core.services.errors import AppError
 
 
 class RoleNotFound(AppError):

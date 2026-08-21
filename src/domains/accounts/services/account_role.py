@@ -4,7 +4,7 @@ from __future__ import annotations
 from uuid import UUID
 from typing import Callable
 
-from src.core.services.base_service import BaseService
+from src.core.services.base_service import BaseService, SupportsPermissionCheck
 from src.core.services.result import ServiceResult
 from src.core.repositories.base_uow import BaseUnitOfWork
 from src.domains.accounts.entities import AccountRole
@@ -22,11 +22,13 @@ class Service(BaseService):
 
     def assign_role(
         self,
+        actor: SupportsPermissionCheck,
         account_id: UUID,
         role_id: UUID,
         assigned_by: UUID | None = None,
         domain_scope: str | None = None,
     ) -> ServiceResult[AccountRole]:
+        self._authorize(actor, "accounts", "account_role", "assign")
         with self._uow_factory() as uow:
             account = uow.accounts.get(account_id)
             if not account:
@@ -43,15 +45,23 @@ class Service(BaseService):
             uow.commit()
         return ServiceResult(data=assignment)
 
-    def list_roles(self, account_id: UUID) -> ServiceResult[list[AccountRole]]:
+    def list_roles(self, actor: SupportsPermissionCheck, account_id: UUID) -> ServiceResult[list[AccountRole]]:
+        self._authorize(actor, "accounts", "account_role", "list")
         with self._uow_factory() as uow:
             account = uow.accounts.get(account_id)
             if not account:
                 raise AccountNotFound()
             roles = uow.account_roles.list(AccountRoleFilter(account_id=account_id, limit=100)).items
         return ServiceResult(data=roles)
+        
+    def list_for_account(self, account_id: UUID) -> ServiceResult[list[AccountRole]]:
+        """Internal use — no permission check."""
+        with self._uow_factory() as uow:
+            roles = uow.account_roles.list(AccountRoleFilter(account_id=account_id, limit=100)).items
+        return ServiceResult(data=roles)
 
-    def revoke_role(self, account_id: UUID, role_id: UUID) -> ServiceResult[None]:
+    def revoke_role(self, actor: SupportsPermissionCheck, account_id: UUID, role_id: UUID) -> ServiceResult[None]:
+        self._authorize(actor, "accounts", "account_role", "revoke")
         with self._uow_factory() as uow:
             assignment = uow.account_roles.get(AccountRoleFilter(account_id=account_id, role_id=role_id))
             if not assignment:
@@ -62,8 +72,9 @@ class Service(BaseService):
             uow.commit()
         return ServiceResult(data=None)
 
-    def get_effective_permissions(self, account_id: UUID) -> ServiceResult[list[str]]:
+    def get_effective_permissions(self, actor: SupportsPermissionCheck, account_id: UUID) -> ServiceResult[list[str]]:
         """Resolved union of all permissions across all of the account's roles."""
+        self._authorize(actor, "accounts", "account_role", "read")
         with self._uow_factory() as uow:
             account = uow.accounts.get(account_id)
             if not account:

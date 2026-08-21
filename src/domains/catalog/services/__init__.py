@@ -1,0 +1,24 @@
+"""Catalog domain service — aggregates all entity services in this domain."""
+from __future__ import annotations
+
+from typing import Callable
+
+from src.core.repositories.base_uow import BaseUnitOfWork
+
+from .brand import BrandService
+from .category import CategoryService
+from .product import ProductService
+from .product_image import ProductImageService
+
+
+class CatalogDomainService:
+    """Aggregates every entity service in the catalog domain.
+
+    Routes reach them via: ``domain_service().catalog.product.create_product(...)``
+    """
+
+    def __init__(self, uow_factory: Callable[[], BaseUnitOfWork], upload_folder: str) -> None:
+        self.product = ProductService(uow_factory)
+        self.brand = BrandService(uow_factory, upload_folder)
+        self.category = CategoryService(uow_factory)
+        self.product_image = ProductImageService(uow_factory, upload_folder)

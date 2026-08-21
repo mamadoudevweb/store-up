@@ -13,6 +13,7 @@ from src.core.services.base_service import BaseService
 from src.core.services.result import ServiceResult
 from src.core.repositories.base_uow import BaseUnitOfWork
 from src.core.events.dispatcher import EventDispatcher
+from src.domains.accounts.repositories.filters import CredentialFilter
 from src.domains.auth.events import UserLoggedIn, UserLoggedOut
 from src.domains.auth.exceptions import InvalidCredentials
 from src.domains.auth.repositories.base_denylist import BaseTokenDenylist
@@ -38,7 +39,7 @@ class AuthService(BaseService):
     def login(self, username: str, password: str, ip_address: str | None = None) -> ServiceResult[TokenPair]:
         """Validates credentials and returns JWT tokens."""
         with self._uow_factory() as uow:
-            cred = uow.credentials.get(username_or_email=username)
+            cred = uow.credentials.get(CredentialFilter(username_or_email=username))
             if not cred:
                 raise InvalidCredentials()
 
@@ -72,6 +73,10 @@ class AuthService(BaseService):
         self._denylist.add(jti, exp)
         self._dispatcher.dispatch([UserLoggedOut(jti=jti)])
         return ServiceResult(data=None)
+
+    def is_token_revoked(self, jti: str) -> bool:
+        """Checks if a token has been revoked."""
+        return self._denylist.is_revoked(jti)
 
     def refresh(self, identity: str) -> ServiceResult[str]:
         """Issues a new access token based on a refresh token's identity."""

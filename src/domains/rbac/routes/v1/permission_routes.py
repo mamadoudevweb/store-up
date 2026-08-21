@@ -6,6 +6,7 @@ from uuid import UUID
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 
+from src.app.identity import get_current_actor
 from src.domains.rbac.repositories.filters import PermissionFilter
 from src.domains.rbac.routes.v1.helpers import get_rbac_service, serialize_permission, paginated
 from src.domains.rbac.routes.v1.schemas.rbac_schemas import CreatePermissionRequest
@@ -17,8 +18,10 @@ bp = Blueprint("permission", __name__)
 @bp.post("")
 @jwt_required()
 def create_permission():  # type: ignore[no-untyped-def]
+    actor = get_current_actor()
     body = CreatePermissionRequest.model_validate(request.get_json(force=True))
     result = get_rbac_service().permission.create_permission(
+        actor=actor,
         resource=body.resource,
         action=body.action,
         description=body.description,
@@ -29,6 +32,8 @@ def create_permission():  # type: ignore[no-untyped-def]
 @bp.get("")
 @jwt_required()
 def list_permissions():  # type: ignore[no-untyped-def]
+    actor = get_current_actor()
+    get_rbac_service().permission._authorize(actor, "rbac", "permission", "list")
     filters = PermissionFilter(
         page=int(request.args.get("page", 1)),
         limit=int(request.args.get("limit", 20)),
@@ -43,14 +48,17 @@ def list_permissions():  # type: ignore[no-untyped-def]
 @bp.get("/<uuid:permission_id>")
 @jwt_required()
 def get_permission(permission_id: UUID):  # type: ignore[no-untyped-def]
-    result = get_rbac_service().permission.get_permission(permission_id)
+    actor = get_current_actor()
+    result = get_rbac_service().permission.get_permission(actor, permission_id)
     return ok(serialize_permission(result.data))
 
 
 @bp.delete("/<uuid:permission_id>")
 @jwt_required()
 def delete_permission(permission_id: UUID):  # type: ignore[no-untyped-def]
+    actor = get_current_actor()
     svc = get_rbac_service()
+    svc.permission._authorize(actor, "rbac", "permission", "delete")
     with svc._uow_factory() as uow:
         perm = uow.permissions.get(permission_id)
         if perm:

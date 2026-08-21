@@ -5,7 +5,7 @@ from uuid import UUID
 from typing import Callable
 import bcrypt
 
-from src.core.services.base_service import BaseService
+from src.core.services.base_service import BaseService, SupportsPermissionCheck
 from src.core.services.result import ServiceResult
 from src.core.repositories.base_uow import BaseUnitOfWork
 from src.domains.accounts.entities import Credential
@@ -30,6 +30,7 @@ class Service(BaseService):
         email: str,
         password: str,
     ) -> ServiceResult[Credential]:
+        # Registration doesn't strictly need actor authorization if it's open
         with self._uow_factory() as uow:
             account = uow.accounts.get(account_id)
             if not account:
@@ -55,7 +56,8 @@ class Service(BaseService):
             uow.commit()
         return ServiceResult(data=cred)
 
-    def get_credentials(self, account_id: UUID) -> ServiceResult[Credential]:
+    def get_credentials(self, actor: SupportsPermissionCheck, account_id: UUID) -> ServiceResult[Credential]:
+        self._authorize(actor, "accounts", "credential", "read")
         with self._uow_factory() as uow:
             cred = uow.credentials.get(CredentialFilter(account_id=account_id))
         if not cred:
@@ -64,11 +66,13 @@ class Service(BaseService):
 
     def update_credentials(
         self,
+        actor: SupportsPermissionCheck,
         account_id: UUID,
         username: str | None = None,
         email: str | None = None,
         password: str | None = None,
     ) -> ServiceResult[Credential]:
+        self._authorize(actor, "accounts", "credential", "update")
         with self._uow_factory() as uow:
             cred = uow.credentials.get(CredentialFilter(account_id=account_id))
             if not cred:

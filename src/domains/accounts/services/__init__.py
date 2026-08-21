@@ -15,7 +15,7 @@ class AccountDomainService(BaseService):
         super().__init__(uow_factory)
         self._account = account_svc.Service(uow_factory)
         self._credential = credential_svc.Service(uow_factory)
-        self._role = role_svc.Service(uow_factory)
+        self._account_role = role_svc.Service(uow_factory)
 
     @property
     def account(self) -> account_svc.Service:
@@ -26,5 +26,5 @@ class AccountDomainService(BaseService):
         return self._credential
 
     @property
-    def role(self) -> role_svc.Service:
-        return self._role
+    def account_role(self) -> role_svc.Service:
+        return self._account_role

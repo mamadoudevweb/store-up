@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from http import HTTPStatus
 
-from src.domains.shared.exceptions import AppError
+from src.core.services.errors import AppError
 
 
 class AccountNotFound(AppError):

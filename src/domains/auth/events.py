@@ -7,13 +7,13 @@ from uuid import UUID
 from src.core.entities.events import DomainEvent
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class UserLoggedIn(DomainEvent):
     account_id: UUID
     username: str
     ip_address: str | None = None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True)
 class UserLoggedOut(DomainEvent):
     jti: str

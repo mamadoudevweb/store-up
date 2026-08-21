@@ -5,7 +5,7 @@ import uuid
 from typing import Callable
 
 from src.core.entities.pagination import Pagination
-from src.core.services.base_service import BaseService
+from src.core.services.base_service import BaseService, SupportsPermissionCheck
 from src.core.services.result import ServiceResult
 from src.core.repositories.base_uow import BaseUnitOfWork
 from src.domains.rbac.entities import Permission
@@ -18,18 +18,20 @@ class PermissionService(BaseService):
     def __init__(self, uow_factory: Callable[[], BaseUnitOfWork]) -> None:
         super().__init__(uow_factory)
 
-    def create_permission(self, resource: str, action: str, description: str | None = None) -> ServiceResult[Permission]:
+    def create_permission(self, actor: SupportsPermissionCheck, resource: str, action: str, description: str | None = None) -> ServiceResult[Permission]:
+        self._authorize(actor, "rbac", "permission", "create")
         with self._uow_factory() as uow:
             if uow.permissions.exists(resource=resource, action=action):
                 raise PermissionAlreadyExists(f"Permission '{resource}:{action}' already exists.")
 
-            permission = Permission(resource=resource, action=action, description=description)
-            uow.permissions.add(permission)
+            added_perm = Permission(resource=resource, action=action, description=description)
+            added_perm = uow.permissions.add(added_perm)
             uow.commit()
 
-            return ServiceResult(data=permission)
+            return ServiceResult(data=added_perm)
 
-    def get_permission(self, permission_id: str | uuid.UUID) -> ServiceResult[Permission]:
+    def get_permission(self, actor: SupportsPermissionCheck, permission_id: str | uuid.UUID) -> ServiceResult[Permission]:
+        self._authorize(actor, "rbac", "permission", "read")
         if isinstance(permission_id, str):
             permission_id = uuid.UUID(permission_id)
 
@@ -39,7 +41,8 @@ class PermissionService(BaseService):
                 raise PermissionNotFound(f"Permission '{permission_id}' not found.")
             return ServiceResult(data=permission)
 
-    def list_role_permissions(self, role_id: str | uuid.UUID) -> ServiceResult[Pagination[Permission]]:
+    def list_role_permissions(self, actor: SupportsPermissionCheck, role_id: str | uuid.UUID) -> ServiceResult[Pagination[Permission]]:
+        self._authorize(actor, "rbac", "permission", "list")
         if isinstance(role_id, str):
             role_id = uuid.UUID(role_id)
 
@@ -48,7 +51,7 @@ class PermissionService(BaseService):
             return ServiceResult(data=paginated)
 
     def check_roles_have_permission(self, role_ids: list[str | uuid.UUID], resource: str, action: str) -> ServiceResult[bool]:
-        """Return True if ANY of the given roles has the requested permission."""
+        """Return True if ANY of the given roles has the requested permission. No actor required as this is internal system access."""
         parsed_ids = [uuid.UUID(r) if isinstance(r, str) else r for r in role_ids]
 
         with self._uow_factory() as uow:

@@ -13,3 +13,6 @@ class Entity:
     def pull_events(self) -> list[DomainEvent]:
         events, self._events = self._events, []
         return events
+
+# Backward-compat alias used by catalog entities
+BaseEntity = Entity

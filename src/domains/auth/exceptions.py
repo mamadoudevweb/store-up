@@ -1,12 +1,12 @@
 """Auth domain exceptions."""
 from __future__ import annotations
 
-from src.domains.shared.exceptions import AppError
+from src.core.services.errors import AppError
 
 
 class InvalidCredentials(AppError):
     code = "INVALID_CREDENTIALS"
-    http_status = 401
+    status_code = 401
     
     def __init__(self, message: str = "Invalid username or password.") -> None:
         super().__init__(message=message)
@@ -14,7 +14,7 @@ class InvalidCredentials(AppError):
 
 class TokenRevoked(AppError):
     code = "TOKEN_REVOKED"
-    http_status = 401
+    status_code = 401
     
     def __init__(self, message: str = "Token has been revoked") -> None:
         super().__init__(message=message)
@@ -22,7 +22,7 @@ class TokenRevoked(AppError):
 
 class TokenDecodeError(AppError):
     code = "TOKEN_DECODE_ERROR"
-    http_status = 401
+    status_code = 401
     
     def __init__(self, message: str = "Failed to decode token") -> None:
         super().__init__(message=message)

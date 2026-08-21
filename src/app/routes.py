@@ -21,7 +21,7 @@ def register_routes(app: Flask) -> None:
         pass
         
     try:
-        from src.domains.products.routes.v1 import router as products_router
-        app.register_blueprint(products_router, url_prefix="/api/v1")
+        from src.domains.catalog.routes.v1 import router as catalog_router
+        app.register_blueprint(catalog_router, url_prefix="/api/v1")
     except ImportError:
         pass

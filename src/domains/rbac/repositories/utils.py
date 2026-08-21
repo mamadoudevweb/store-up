@@ -19,7 +19,8 @@ class RoleMapper(Mapper[Role, RoleModel]):
 
     def to_model(self, entity: Role, existing: RoleModel | None = None) -> RoleModel:
         model = existing or RoleModel()
-        model.id = entity.id
+        if entity.id is not None:
+            model.id = entity.id
         model.name = entity.name
         model.description = entity.description
         model.created_at = entity.created_at
@@ -39,7 +40,8 @@ class PermissionMapper(Mapper[Permission, PermissionModel]):
 
     def to_model(self, entity: Permission, existing: PermissionModel | None = None) -> PermissionModel:
         model = existing or PermissionModel()
-        model.id = entity.id
+        if entity.id is not None:
+            model.id = entity.id
         model.resource = entity.resource
         model.action = entity.action
         model.description = entity.description

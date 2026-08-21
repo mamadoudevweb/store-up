@@ -54,7 +54,7 @@ def create_app(env: str | None = None) -> Flask:
     with app.app_context():
         session_factory = build_session_factory(db)
         uow_factory: Callable[[], SqlUnitOfWork] = build_uow_factory(session_factory, dispatcher)
-        domain_service = build_domain_service(uow_factory, redis_client, dispatcher)
+        domain_service = build_domain_service(uow_factory, redis_client, dispatcher, config.UPLOAD_FOLDER)
         domain_service.init_app(app)
         
         # Import models so Alembic can see them
@@ -62,7 +62,7 @@ def create_app(env: str | None = None) -> Flask:
             import src.domains.accounts.repositories.sql.orms
             import src.domains.auth.repositories.sql.models
             import src.domains.rbac.repositories.sql.orms
-            import src.domains.products.repositories.sql.orms
+            import src.domains.catalog.repositories.sql.orms
         except ImportError:
             pass
 

@@ -20,3 +20,7 @@ class EntityFilter:
     limit: int = 20
     sort_by: str | None = None
     sort_desc: bool = False
+
+    @property
+    def offset(self) -> int:
+        return (self.page - 1) * self.limit

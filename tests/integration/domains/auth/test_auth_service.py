@@ -1,93 +1,75 @@
-"""Integration tests for AuthService."""
+"""Integration tests for Auth domain service."""
 from __future__ import annotations
 
 import pytest
-from datetime import datetime, timezone
 
-from src.domains.accounts.repositories.sql.sql_uow import SqlAccountUnitOfWork
-from src.domains.accounts.services import AccountService
+from src.domains.auth.services.auth import AuthService
 from src.domains.auth.repositories.memory_denylist import InMemoryTokenDenylist
-from src.domains.auth.services import AuthService
 from src.domains.auth.exceptions import InvalidCredentials
-from src.domains.shared.events import EventBus
-
-# Note: We need a Flask application context for flask_jwt_extended to generate tokens.
-# Let's create a fixture for the Flask app.
-
-
-@pytest.fixture
-def test_app():
-    from src.app import create_app
-    app = create_app("testing")
-    app.config["JWT_SECRET_KEY"] = "super-secret"
-    with app.app_context():
-        yield app
+from src.domains.accounts.services import AccountDomainService
+from src.domains.accounts.services.account import Service as AccountService
+from src.domains.accounts.services.credential import Service as CredentialService
+from src.core.events.dispatcher import EventDispatcher
 
 
 @pytest.fixture
-def auth_components(uow_factory):
-    uow = SqlAccountUnitOfWork(uow_factory)
-    bus = EventBus()
+def auth_service(uow_factory):
+    """Provides the AuthService using the test UoW."""
+    # Auth service needs the account domain to verify credentials
+    # For integration testing we instantiate exactly what's needed
+    
+    dispatcher = EventDispatcher()
     denylist = InMemoryTokenDenylist()
     
-    # We also need the account service to setup test accounts
-    account_service = AccountService(uow, bus)
-    auth_service = AuthService(uow, denylist, bus)
-    
-    return account_service, auth_service
+    return AuthService(
+        uow_factory=uow_factory,
+        dispatcher=dispatcher,
+        denylist=denylist,
+    )
 
 
-def test_auth_service_login_success(test_app, auth_components):
-    account_service, auth_service = auth_components
-    
-    # 1. Setup
-    account_id = account_service.account.create_account("Alice", "Wonderland").data.id
-    account_service.credential.set_credentials(
+def test_auth_login_success(auth_service, uow_factory, mock_actor):
+    # Setup test account
+    accounts_service = AccountDomainService(
+        account=AccountService(uow_factory),
+        credential=CredentialService(uow_factory)
+    )
+    account_id = accounts_service.account.create_account("Alice", "Auth").data.id
+    accounts_service.credential.set_credentials(
         account_id, "alice", "alice@example.com", "password123"
     )
-    
-    # 2. Login
-    res = auth_service.login("alice", "password123", "127.0.0.1")
+
+    # Login via Auth Service
+    res = auth_service.login("alice", "password123")
     assert res.success
-    assert res.data.access_token is not None
-    assert res.data.refresh_token is not None
+    assert "access_token" in res.data
+    assert "refresh_token" in res.data
 
 
-def test_auth_service_login_failure(test_app, auth_components):
-    account_service, auth_service = auth_components
-    
-    # 1. Setup
-    account_id = account_service.account.create_account("Bob", "Builder").data.id
-    account_service.credential.set_credentials(
-        account_id, "bob", "bob@example.com", "correcthorse"
+def test_auth_login_invalid(auth_service, uow_factory, mock_actor):
+    # Setup test account
+    accounts_service = AccountDomainService(
+        account=AccountService(uow_factory),
+        credential=CredentialService(uow_factory)
     )
-    
-    # 2. Login with wrong password
-    with pytest.raises(InvalidCredentials):
-        auth_service.login("bob", "wrongpassword")
-        
-    # 3. Login with wrong username
-    with pytest.raises(InvalidCredentials):
-        auth_service.login("bobby", "correcthorse")
-
-
-def test_auth_service_logout(test_app, auth_components):
-    account_service, auth_service = auth_components
-    
-    account_id = account_service.account.create_account("Eve", "Hacker").data.id
-    account_service.credential.set_credentials(
-        account_id, "eve", "eve@example.com", "password123"
+    account_id = accounts_service.account.create_account("Bob", "Auth").data.id
+    accounts_service.credential.set_credentials(
+        account_id, "bob", "bob@example.com", "password123"
     )
-    
-    res = auth_service.login("eve", "password123")
+
+    # Login via Auth Service with wrong password
+    with pytest.raises(InvalidCredentials):
+        auth_service.login("bob", "wrongpass")
+
+    # Login with non-existent username
+    with pytest.raises(InvalidCredentials):
+        auth_service.login("nobody", "password123")
+
+
+def test_auth_logout(auth_service):
+    # Logout just puts JTI on denylist
+    res = auth_service.logout("jti-12345", 9999999999)
     assert res.success
-    
-    # Normally we'd get jti/exp from the decoded token, but we can mock it here
-    jti = "mock-jti"
-    exp = int(datetime.now(timezone.utc).timestamp()) + 3600
-    
-    # Logout
-    auth_service.logout(jti, exp)
     
     # Check denylist
-    assert auth_service._denylist.is_revoked(jti)
+    assert auth_service._denylist.is_revoked("jti-12345")
