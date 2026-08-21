@@ -20,6 +20,26 @@ class ProductImageService(BaseService):
         super().__init__(uow_factory)
         self._upload_folder = upload_folder
 
+    def _save_file(self, filename: str, file_stream: BinaryIO) -> str:
+        """Save a file to the upload folder and return the generated safe filename."""
+        os.makedirs(self._upload_folder, exist_ok=True)
+        ext = os.path.splitext(filename)[1]
+        safe_filename = f"{uuid.uuid4().hex}{ext}"
+        file_path = os.path.join(self._upload_folder, safe_filename)
+
+        with open(file_path, "wb") as f:
+            f.write(file_stream.read())
+        return safe_filename
+
+    def _delete_file(self, filename: str) -> None:
+        """Delete a file from the upload folder if it exists."""
+        full_path = os.path.join(self._upload_folder, filename)
+        if os.path.exists(full_path):
+            try:
+                os.remove(full_path)
+            except OSError:
+                pass
+
     def upload_image(
         self,
         actor: SupportsPermissionCheck,
@@ -34,13 +54,7 @@ class ProductImageService(BaseService):
             if uow.products.get(ProductFilter(id=product_id)) is None:
                 raise ProductNotFound()
 
-            os.makedirs(self._upload_folder, exist_ok=True)
-            ext = os.path.splitext(filename)[1]
-            safe_filename = f"{uuid.uuid4().hex}{ext}"
-            file_path = os.path.join(self._upload_folder, safe_filename)
-
-            with open(file_path, "wb") as f:
-                f.write(file_stream.read())
+            safe_filename = self._save_file(filename, file_stream)
 
             if is_primary:
                 existing = uow.product_images.list(
@@ -107,11 +121,6 @@ class ProductImageService(BaseService):
             )
             if image is None:
                 raise ProductImageNotFound()
-            full_path = os.path.join(self._upload_folder, image.file_path)
-            if os.path.exists(full_path):
-                try:
-                    os.remove(full_path)
-                except OSError:
-                    pass
+            self._delete_file(image.file_path)
             uow.product_images.delete(image)
         return ServiceResult(data=None)
