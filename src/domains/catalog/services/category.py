@@ -27,7 +27,6 @@ class CategoryService(BaseService):
         with self._uow_factory() as uow:
             if parent_id and not uow.categories.exists(CategoryFilter(id=parent_id)):
                 raise CategoryNotFound(f"Parent category {parent_id} not found.")
-            now = datetime.now(timezone.utc)
             category = Category(
                 id=uuid.uuid4(), name=name, parent_id=parent_id,
             )

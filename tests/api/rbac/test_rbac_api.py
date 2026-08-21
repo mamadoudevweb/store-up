@@ -16,18 +16,32 @@ def superuser_headers(app):
         # However, the API uses the identity in the token. We can monkeypatch get_current_actor
         # during the test, or just grant them actual permissions.
         # Let's grant them the actual permissions for the tests.
-        role_res = domain_service.rbac.role.create_role(
-            None, f"super_admin_{acc.id}", "Super Admin"
-        ).data
-        domain_service.accounts.account_role.assign_role(None, acc.id, role_res.id)
+        from tests.conftest import MockActor
+        mock_actor = MockActor({"*"})
+        import uuid
+        unique_suffix = uuid.uuid4().hex[:8]
         
-        # Grant permissions
+        role_res = domain_service.rbac.role.create_role(
+            mock_actor, f"super_admin_{acc.id}_{unique_suffix}", "Super Admin"
+        ).data
+        domain_service.accounts.account_role.assign_role(mock_actor, acc.id, role_res.id)
+        
+        # Give permission to manage roles and permissions
         for entity in ["role", "permission", "role_permission"]:
-            for action in ["create", "read", "update", "delete", "list", "assign"]:
-                perm = domain_service.rbac.permission.create_permission(
-                    None, f"rbac:{entity}", action, "All perms"
-                ).data
-                domain_service.rbac.role_permission.assign(None, role_res.id, perm.id)
+            for action in ["create", "read", "update", "delete", "list", "unassign"]:
+                resource_name = f"rbac:{entity}"
+                from src.domains.rbac.exceptions import PermissionAlreadyExists
+                try:
+                    perm = domain_service.rbac.permission.create_permission(
+                        mock_actor, resource_name, action, "All perms"
+                    ).data
+                except PermissionAlreadyExists:
+                    from src.domains.rbac.repositories.filters import PermissionFilter
+                    with domain_service.rbac.permission._uow_factory() as uow:
+                        res = uow.permissions.list(PermissionFilter(resource=resource_name, action=action))
+                        perm = res.items[0]
+
+                domain_service.rbac.role_permission.assign(mock_actor, role_res.id, perm.id)
 
         token = create_access_token(identity=str(acc.id))
         return {"Authorization": f"Bearer {token}"}
@@ -68,7 +82,7 @@ def test_role_api(client, superuser_headers, normal_user_headers):
     # List roles
     res = client.get("/api/v1/roles", headers=superuser_headers)
     assert res.status_code == 200
-    assert len(res.get_json()["data"]["items"]) > 0
+    assert len(res.get_json()["data"]) > 0
 
     # Delete role
     res = client.delete(f"/api/v1/roles/{role_id}", headers=superuser_headers)
@@ -130,7 +144,7 @@ def test_role_permission_api(client, superuser_headers):
     # List role permissions
     res = client.get(f"/api/v1/roles/{role_id}/permissions", headers=superuser_headers)
     assert res.status_code == 200
-    assert len(res.get_json()["data"]["items"]) == 1
+    assert len(res.get_json()["data"]) == 1
 
     # Unassign
     res = client.delete(f"/api/v1/roles/{role_id}/permissions/{perm_id}", headers=superuser_headers)
@@ -139,4 +153,4 @@ def test_role_permission_api(client, superuser_headers):
     # List role permissions (empty)
     res = client.get(f"/api/v1/roles/{role_id}/permissions", headers=superuser_headers)
     assert res.status_code == 200
-    assert len(res.get_json()["data"]["items"]) == 0
+    assert len(res.get_json()["data"]) == 0

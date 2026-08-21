@@ -49,3 +49,7 @@ Thumbs.db
 
 # Alembic (keep versions tracked, ignore pyc)
 migrations/versions/__pycache__/
+
+prompt.txt
+shop-management-api.md
+flask-api-architecture-standard.md

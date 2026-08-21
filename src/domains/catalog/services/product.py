@@ -33,7 +33,6 @@ class ProductService(BaseService):
         with self._uow_factory() as uow:
             if uow.products.exists(ProductFilter(sku=sku)):
                 raise DuplicateSkuError(sku=sku)
-            now = datetime.now(timezone.utc)
             product = Product(
                 id=uuid.uuid4(),
                 sku=sku,
@@ -43,8 +42,6 @@ class ProductService(BaseService):
                 description=description,
                 category_id=category_id,
                 brand_id=brand_id,
-                created_at=now,
-                updated_at=now,
             )
             product = uow.products.add(product)
             uow.track(product)
@@ -94,7 +91,6 @@ class ProductService(BaseService):
             product.category_id = category_id
             product.brand_id = brand_id
             product.is_active = is_active
-            product.updated_at = datetime.now(timezone.utc)
             product = uow.products.update(product)
         return ServiceResult(data=product)
 
@@ -107,6 +103,5 @@ class ProductService(BaseService):
             if product is None:
                 raise ProductNotFound()
             product.is_active = False
-            product.updated_at = datetime.now(timezone.utc)
             uow.products.update(product)
         return ServiceResult(data=None)

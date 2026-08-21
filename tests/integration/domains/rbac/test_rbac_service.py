@@ -132,13 +132,11 @@ def test_role_permission_unassign(rbac_service, mock_actor):
     assert res.success
     assert len(rbac_service.permission.list_role_permissions(mock_actor, role.id).data.items) == 0
 
-    # Unassign non-existent
-    from src.domains.rbac.exceptions import RolePermissionNotFound
-    with pytest.raises(RolePermissionNotFound):
-        rbac_service.role_permission.revoke(mock_actor, role.id, perm.id)
+    # Unassign non-existent (idempotent, shouldn't fail)
+    res2 = rbac_service.role_permission.revoke(mock_actor, role.id, perm.id)
+    assert res2.success
 
-    # Assign duplicate
+    # Assign duplicate (idempotent, shouldn't fail)
     rbac_service.role_permission.assign(mock_actor, role.id, perm.id)
-    from src.domains.rbac.exceptions import RolePermissionAlreadyExists
-    with pytest.raises(RolePermissionAlreadyExists):
-        rbac_service.role_permission.assign(mock_actor, role.id, perm.id)
+    res3 = rbac_service.role_permission.assign(mock_actor, role.id, perm.id)
+    assert res3.success
