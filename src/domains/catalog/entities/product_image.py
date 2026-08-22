@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 
 from src.core.entities.base_entity import BaseEntity
 
@@ -13,3 +14,4 @@ class ProductImage(BaseEntity):
     file_path: str
     is_primary: bool = False
     sort_order: int = 0
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

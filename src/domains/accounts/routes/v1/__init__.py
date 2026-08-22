@@ -1,6 +1,7 @@
 """Accounts v1 routes — /api/v1/accounts and /api/v1/accounts/{id}/..."""
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from flask import Blueprint, current_app, request
@@ -23,7 +24,7 @@ from src.core.routes.envelope import ok
 router = Blueprint("accounts", __name__)
 
 
-def _get_domain_service():
+def _get_domain_service() -> Any:
     return current_app.extensions["domain_service"]
 
 
@@ -55,7 +56,7 @@ def _serialize_credential(cred) -> dict:
 
 @router.post("/accounts")
 # Registration route might not need @jwt_required depending on whether registration is open
-def create_account():
+def create_account() -> dict:
     body = CreateAccountRequest.model_validate(request.get_json(force=True))
     result = _get_domain_service().accounts.account.create_account(
         first_name=body.first_name,
@@ -67,7 +68,7 @@ def create_account():
 
 @router.get("/accounts")
 @jwt_required()
-def list_accounts():
+def list_accounts() -> dict:
     actor = get_current_actor()
     filters = AccountFilter(
         page=int(request.args.get("page", 1)),
@@ -88,7 +89,7 @@ def list_accounts():
 
 @router.get("/accounts/<uuid:account_id>")
 @jwt_required()
-def get_account(account_id: UUID):
+def get_account(account_id: UUID) -> dict:
     actor = get_current_actor()
     result = _get_domain_service().accounts.account.get_account(actor, account_id)
     return ok(_serialize_account(result.data))
@@ -96,7 +97,7 @@ def get_account(account_id: UUID):
 
 @router.put("/accounts/<uuid:account_id>")
 @jwt_required()
-def update_account(account_id: UUID):
+def update_account(account_id: UUID) -> dict:
     actor = get_current_actor()
     body = UpdateAccountRequest.model_validate(request.get_json(force=True))
     result = _get_domain_service().accounts.account.update_account(
@@ -111,17 +112,17 @@ def update_account(account_id: UUID):
 
 @router.delete("/accounts/<uuid:account_id>")
 @jwt_required()
-def suspend_account(account_id: UUID):
+def suspend_account(account_id: UUID) -> dict:
     actor = get_current_actor()
     """Soft delete — suspends the account."""
     result = _get_domain_service().accounts.account.suspend_account(actor, account_id)
     return ok(_serialize_account(result.data))
 
 
-# ── Credentials ────────────────────────────────────────────────────────────────
+# ── Credentials ──────────────────────────────────────────────────────────────────
 
 @router.post("/accounts/<uuid:account_id>/credentials")
-def set_credentials(account_id: UUID):
+def set_credentials(account_id: UUID) -> dict:
     # This might not need actor if setting initial credentials during registration
     body = SetCredentialsRequest.model_validate(request.get_json(force=True))
     result = _get_domain_service().accounts.credential.set_credentials(
@@ -135,7 +136,7 @@ def set_credentials(account_id: UUID):
 
 @router.get("/accounts/<uuid:account_id>/credentials")
 @jwt_required()
-def get_credentials(account_id: UUID):
+def get_credentials(account_id: UUID) -> dict:
     actor = get_current_actor()
     result = _get_domain_service().accounts.credential.get_credentials(actor, account_id)
     return ok(_serialize_credential(result.data))
@@ -143,7 +144,7 @@ def get_credentials(account_id: UUID):
 
 @router.put("/accounts/<uuid:account_id>/credentials")
 @jwt_required()
-def update_credentials(account_id: UUID):
+def update_credentials(account_id: UUID) -> dict:
     actor = get_current_actor()
     body = UpdateCredentialsRequest.model_validate(request.get_json(force=True))
     result = _get_domain_service().accounts.credential.update_credentials(
@@ -156,11 +157,11 @@ def update_credentials(account_id: UUID):
     return ok(_serialize_credential(result.data))
 
 
-# ── Role assignments ───────────────────────────────────────────────────────────
+# ── Role assignments ────────────────────────────────────────────────────────────
 
 @router.post("/accounts/<uuid:account_id>/roles")
 @jwt_required()
-def assign_role(account_id: UUID):
+def assign_role(account_id: UUID) -> dict:
     actor = get_current_actor()
     body = AssignRoleRequest.model_validate(request.get_json(force=True))
     caller_id = UUID(get_jwt_identity())
@@ -183,7 +184,7 @@ def assign_role(account_id: UUID):
 
 @router.get("/accounts/<uuid:account_id>/roles")
 @jwt_required()
-def list_account_roles(account_id: UUID):
+def list_account_roles(account_id: UUID) -> dict:
     actor = get_current_actor()
     result = _get_domain_service().accounts.account_role.list_roles(actor, account_id)
     data = [
@@ -201,7 +202,7 @@ def list_account_roles(account_id: UUID):
 
 @router.delete("/accounts/<uuid:account_id>/roles/<uuid:role_id>")
 @jwt_required()
-def revoke_role(account_id: UUID, role_id: UUID):
+def revoke_role(account_id: UUID, role_id: UUID) -> dict:
     actor = get_current_actor()
     _get_domain_service().accounts.account_role.revoke_role(actor, account_id, role_id)
     return ok(None)

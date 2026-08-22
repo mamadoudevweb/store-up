@@ -18,3 +18,5 @@ class Product(BaseEntity):
     category_id: uuid.UUID | None = None
     brand_id: uuid.UUID | None = None
     is_active: bool = True
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
