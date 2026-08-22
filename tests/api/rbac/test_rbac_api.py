@@ -28,7 +28,7 @@ def superuser_headers(app):
         
         # Give permission to manage roles and permissions
         for entity in ["role", "permission", "role_permission"]:
-            for action in ["create", "read", "update", "delete", "list", "unassign"]:
+            for action in ["create", "read", "update", "delete", "list", "assign", "revoke"]:
                 resource_name = f"rbac:{entity}"
                 from src.domains.rbac.exceptions import PermissionAlreadyExists
                 try:

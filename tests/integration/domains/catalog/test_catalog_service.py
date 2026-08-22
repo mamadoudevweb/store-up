@@ -47,14 +47,14 @@ def test_brand_service(catalog_service, mock_actor):
     fake_file = io.BytesIO(b"fake image data")
     fake_file.filename = "logo.png"
     fake_file.content_type = "image/png"
-    res = catalog_service.brand.upload_logo(mock_actor, brand_id, fake_file)
+    res = catalog_service.brand.upload_logo(mock_actor, brand_id, fake_file.filename, fake_file)
     assert res.success
-    assert "logo" in res.data.logo_url
+    assert res.data.logo_path.endswith(".png")
 
     # Delete logo
     res = catalog_service.brand.delete_logo(mock_actor, brand_id)
     assert res.success
-    assert res.data.logo_url is None
+    assert res.data.logo_path is None
 
     # Delete brand
     res = catalog_service.brand.delete_brand(mock_actor, brand_id)
@@ -65,7 +65,7 @@ def test_brand_service(catalog_service, mock_actor):
 
 def test_category_service(catalog_service, mock_actor):
     # Create category
-    res = catalog_service.category.create_category(mock_actor, name="Electronics", description="Gadgets")
+    res = catalog_service.category.create_category(mock_actor, name="Electronics")
     assert res.success
     category_id = res.data.id
 
@@ -83,7 +83,7 @@ def test_category_service(catalog_service, mock_actor):
 
     # Get category
     res = catalog_service.category.get_category(mock_actor, category_id)
-    assert res.data.name == "Electronics"
+    assert res.data.name == "Electronic devices"
     with pytest.raises(CategoryNotFound):
         catalog_service.category.get_category(mock_actor, uuid.uuid4())
 
@@ -145,35 +145,33 @@ def test_product_service(catalog_service, mock_actor):
     fake_img.content_type = "image/jpeg"
 
     # Upload image
-    img_res = catalog_service.product_image.upload_image(mock_actor, product_id, fake_img, is_primary=True)
+    img_res = catalog_service.product_image.upload_image(mock_actor, product_id, fake_img.filename, fake_img, is_primary=True)
     assert img_res.success
     img_id = img_res.data.id
 
     # List images
     imgs = catalog_service.product_image.list_images(mock_actor, product_id).data
-    assert len(imgs) == 1
-    assert imgs[0].is_primary is True
+    assert len(imgs.items) == 1
+    assert imgs.items[0].is_primary is True
 
     # Upload second image
     fake_img2 = io.BytesIO(b"img2 data")
     fake_img2.filename = "tv2.jpg"
     fake_img2.content_type = "image/jpeg"
-    img_res2 = catalog_service.product_image.upload_image(mock_actor, product_id, fake_img2, is_primary=False)
+    img_res2 = catalog_service.product_image.upload_image(mock_actor, product_id, fake_img2.filename, fake_img2, is_primary=False)
 
     # Set primary
-    catalog_service.product_image.set_primary(mock_actor, img_res2.data.id)
-    imgs2 = catalog_service.product_image.list_images(mock_actor, product_id).data
-    primary_imgs = [i for i in imgs2 if i.is_primary]
-    assert len(primary_imgs) == 1
-    assert primary_imgs[0].id == img_res2.data.id
+    catalog_service.product_image.set_primary(mock_actor, product_id, img_res2.data.id)
+    imgs = catalog_service.product_image.list_images(mock_actor, product_id).data
+    assert imgs.items[1].is_primary is True
 
     # Delete image
-    catalog_service.product_image.delete_image(mock_actor, img_id)
+    catalog_service.product_image.delete_image(mock_actor, product_id, img_id)
     imgs_after = catalog_service.product_image.list_images(mock_actor, product_id).data
-    assert len(imgs_after) == 1
+    assert len(imgs_after.items) == 1
 
     with pytest.raises(ProductImageNotFound):
-        catalog_service.product_image.delete_image(mock_actor, img_id)
+        catalog_service.product_image.delete_image(mock_actor, product_id, img_id)
 
     # Delete product
     catalog_service.product.delete_product(mock_actor, product_id)

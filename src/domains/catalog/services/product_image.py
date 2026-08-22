@@ -71,7 +71,6 @@ class ProductImageService(BaseService):
                 file_path=safe_filename,
                 is_primary=is_primary,
                 sort_order=sort_order,
-                created_at=datetime.now(timezone.utc),
             )
             image = uow.product_images.add(image)
         return ServiceResult(data=image)

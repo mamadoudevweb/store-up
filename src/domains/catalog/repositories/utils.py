@@ -59,8 +59,6 @@ class ProductMapper(Mapper[Product, ProductModel]):
             category_id=model.category_id,
             brand_id=model.brand_id,
             is_active=model.is_active,
-            created_at=model.created_at,
-            updated_at=model.updated_at,
         )
 
     def to_model(self, entity: Product, model: ProductModel | None = None) -> ProductModel:
@@ -74,8 +72,6 @@ class ProductMapper(Mapper[Product, ProductModel]):
         m.category_id = entity.category_id
         m.brand_id = entity.brand_id
         m.is_active = entity.is_active
-        m.created_at = entity.created_at
-        m.updated_at = entity.updated_at
         return m
 
 
@@ -87,7 +83,6 @@ class ProductImageMapper(Mapper[ProductImage, ProductImageModel]):
             file_path=model.file_path,
             is_primary=model.is_primary,
             sort_order=model.sort_order,
-            created_at=model.created_at,
         )
 
     def to_model(
@@ -99,5 +94,4 @@ class ProductImageMapper(Mapper[ProductImage, ProductImageModel]):
         m.file_path = entity.file_path
         m.is_primary = entity.is_primary
         m.sort_order = entity.sort_order
-        m.created_at = entity.created_at
         return m

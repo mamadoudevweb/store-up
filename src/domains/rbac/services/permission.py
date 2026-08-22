@@ -60,8 +60,7 @@ class PermissionService(BaseService):
                 return ServiceResult(data=False)
 
             for role_id in parsed_ids:
-                paginated = uow.permissions.list(PermissionFilter(role_id=role_id))
-                if any(p.id == permission.id for p in paginated.items):
+                if uow.role_permissions.exists(role_id=role_id, permission_id=permission.id):
                     return ServiceResult(data=True)
 
             return ServiceResult(data=False)

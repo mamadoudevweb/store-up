@@ -13,8 +13,6 @@ class CategoryResponse(BaseModel):
     id: UUID
     name: str
     parent_id: UUID | None
-    created_at: datetime
-    updated_at: datetime
 
 
 class CreateCategoryRequest(BaseModel):
@@ -63,8 +61,6 @@ class ProductResponse(BaseModel):
     category_id: UUID | None
     brand_id: UUID | None
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
 
 
 class CreateProductRequest(BaseModel):
@@ -98,4 +94,3 @@ class ProductImageResponse(BaseModel):
     file_path: str
     is_primary: bool
     sort_order: int
-    created_at: datetime

@@ -10,20 +10,20 @@ from pydantic import BaseModel, ConfigDict, Field
 # ── Request schemas ────────────────────────────────────────────────────────────
 
 class CreateRoleRequest(BaseModel):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
     name: str = Field(min_length=1, max_length=100)
     description: str | None = Field(None, max_length=255)
 
 
 class UpdateRoleRequest(BaseModel):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
     description: str | None = Field(None, max_length=255)
 
 
 class CreatePermissionRequest(BaseModel):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
     resource: str = Field(min_length=1, max_length=100)
     action: str = Field(min_length=1, max_length=100)
@@ -31,7 +31,7 @@ class CreatePermissionRequest(BaseModel):
 
 
 class AssignPermissionRequest(BaseModel):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
     permission_id: UUID
 

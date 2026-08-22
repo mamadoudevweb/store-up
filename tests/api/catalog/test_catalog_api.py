@@ -34,8 +34,9 @@ def catalog_superuser_headers(app):
                     ).data
                 except PermissionAlreadyExists:
                     from src.domains.rbac.repositories.filters import PermissionFilter
-                    res = domain_service.rbac.permission._uow_factory().permissions.list(PermissionFilter(resource=resource_name, action=action))
-                    perm = res.items[0]
+                    with domain_service.rbac.permission._uow_factory() as uow:
+                        res = uow.permissions.list(PermissionFilter(resource=resource_name, action=action))
+                        perm = res.items[0]
                 domain_service.rbac.role_permission.assign(mock_actor, role_res.id, perm.id)
 
         token = create_access_token(identity=str(acc.id))
@@ -75,10 +76,11 @@ def test_brand_api(client, catalog_superuser_headers, normal_user_headers):
     # List Brands
     res = client.get("/api/v1/brands", headers=catalog_superuser_headers)
     assert res.status_code == 200
-    assert len(res.get_json()["data"]["items"]) >= 1
+    assert len(res.get_json()["data"]) >= 1
 
     # Update Brand
     res = client.put(f"/api/v1/brands/{brand_id}", headers=catalog_superuser_headers, json={
+        "name": "Sony",
         "description": "Sony Tech"
     })
     assert res.status_code == 200
@@ -103,7 +105,7 @@ def test_brand_api(client, catalog_superuser_headers, normal_user_headers):
 def test_category_api(client, catalog_superuser_headers):
     # Create Category
     res = client.post("/api/v1/categories", headers=catalog_superuser_headers, json={
-        "name": "Books", "description": "Reading material"
+        "name": "Books"
     })
     assert res.status_code == 201
     cat_id = res.get_json()["data"]["id"]
@@ -116,7 +118,7 @@ def test_category_api(client, catalog_superuser_headers):
     # List Categories
     res = client.get("/api/v1/categories", headers=catalog_superuser_headers)
     assert res.status_code == 200
-    assert len(res.get_json()["data"]["items"]) >= 1
+    assert len(res.get_json()["data"]) >= 1
 
     # Update Category
     res = client.put(f"/api/v1/categories/{cat_id}", headers=catalog_superuser_headers, json={
@@ -157,7 +159,7 @@ def test_product_api(client, catalog_superuser_headers):
     # List Products
     res = client.get("/api/v1/products", headers=catalog_superuser_headers)
     assert res.status_code == 200
-    assert len(res.get_json()["data"]["items"]) >= 1
+    assert len(res.get_json()["data"]) >= 1
 
     # Update Product
     res = client.put(f"/api/v1/products/{prod_id}", headers=catalog_superuser_headers, json={

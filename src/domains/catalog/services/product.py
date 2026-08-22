@@ -52,7 +52,7 @@ class ProductService(BaseService):
     ) -> ServiceResult[Product]:
         self._authorize(actor, "catalog", "product", "read")
         with self._uow_factory() as uow:
-            product = uow.products.get(ProductFilter(id=product_id))
+            product = uow.products.get(ProductFilter(id=product_id, is_active=True))
         if product is None:
             raise ProductNotFound()
         return ServiceResult(data=product)
@@ -80,7 +80,7 @@ class ProductService(BaseService):
     ) -> ServiceResult[Product]:
         self._authorize(actor, "catalog", "product", "update")
         with self._uow_factory() as uow:
-            product = uow.products.get(ProductFilter(id=product_id))
+            product = uow.products.get(ProductFilter(id=product_id, is_active=True))
             if product is None:
                 raise ProductNotFound()
             product.sku = sku
@@ -99,7 +99,7 @@ class ProductService(BaseService):
     ) -> ServiceResult[None]:
         self._authorize(actor, "catalog", "product", "delete")
         with self._uow_factory() as uow:
-            product = uow.products.get(ProductFilter(id=product_id))
+            product = uow.products.get(ProductFilter(id=product_id, is_active=True))
             if product is None:
                 raise ProductNotFound()
             product.is_active = False

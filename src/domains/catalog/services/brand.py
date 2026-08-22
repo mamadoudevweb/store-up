@@ -36,7 +36,7 @@ class BrandService(BaseService):
     ) -> ServiceResult[Brand]:
         self._authorize(actor, "catalog", "brand", "read")
         with self._uow_factory() as uow:
-            brand = uow.brands.get(BrandFilter(id=brand_id))
+            brand = uow.brands.get(BrandFilter(id=brand_id, is_active=True))
         if brand is None:
             raise BrandNotFound()
         return ServiceResult(data=brand)
@@ -58,7 +58,7 @@ class BrandService(BaseService):
     ) -> ServiceResult[Brand]:
         self._authorize(actor, "catalog", "brand", "update")
         with self._uow_factory() as uow:
-            brand = uow.brands.get(BrandFilter(id=brand_id))
+            brand = uow.brands.get(BrandFilter(id=brand_id, is_active=True))
             if brand is None:
                 raise BrandNotFound()
             brand.name = name
@@ -71,7 +71,7 @@ class BrandService(BaseService):
     ) -> ServiceResult[None]:
         self._authorize(actor, "catalog", "brand", "delete")
         with self._uow_factory() as uow:
-            brand = uow.brands.get(BrandFilter(id=brand_id))
+            brand = uow.brands.get(BrandFilter(id=brand_id, is_active=True))
             if brand is None:
                 raise BrandNotFound()
             brand.is_active = False
@@ -87,7 +87,7 @@ class BrandService(BaseService):
     ) -> ServiceResult[Brand]:
         self._authorize(actor, "catalog", "brand", "update")
         with self._uow_factory() as uow:
-            brand = uow.brands.get(BrandFilter(id=brand_id))
+            brand = uow.brands.get(BrandFilter(id=brand_id, is_active=True))
             if brand is None:
                 raise BrandNotFound()
 
@@ -116,7 +116,7 @@ class BrandService(BaseService):
     ) -> ServiceResult[Brand]:
         self._authorize(actor, "catalog", "brand", "update")
         with self._uow_factory() as uow:
-            brand = uow.brands.get(BrandFilter(id=brand_id))
+            brand = uow.brands.get(BrandFilter(id=brand_id, is_active=True))
             if brand is None:
                 raise BrandNotFound()
 
