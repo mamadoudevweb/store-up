@@ -3,10 +3,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from src.domains.auth.repositories.base_denylist import BaseTokenDenylist
+from src.domains.auth.repositories.base_denylist import DenylistRepository
 
 
-class InMemoryTokenDenylist(BaseTokenDenylist):
+class MemoryDenylistRepository(DenylistRepository):
     """Non-persistent, process-local denylist. Not suitable for multi-process production."""
 
     def __init__(self) -> None:

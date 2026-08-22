@@ -1,5 +1,6 @@
 """InventoryItem entity."""
 from __future__ import annotations
+from uuid import UUID
 
 import uuid
 from dataclasses import dataclass
@@ -9,7 +10,7 @@ from src.domains.inventory.events import LowStockAlert, OutOfStock, StockAdjuste
 
 
 @dataclass(kw_only=True)
-class InventoryItem(BaseEntity):
+class InventoryItem(BaseEntity[UUID]):
     id: uuid.UUID
     product_id: uuid.UUID
     quantity_on_hand: int = 0

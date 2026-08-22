@@ -16,7 +16,7 @@ from src.core.events.dispatcher import EventDispatcher
 from src.domains.accounts.repositories.filters import CredentialFilter
 from src.domains.auth.events import UserLoggedIn, UserLoggedOut
 from src.domains.auth.exceptions import InvalidCredentials
-from src.domains.auth.repositories.base_denylist import BaseTokenDenylist
+from src.domains.auth.repositories.base_denylist import DenylistRepository
 
 
 @dataclass
@@ -26,10 +26,12 @@ class TokenPair:
 
 
 class AuthService(BaseService):
+    """Business logic for authentication."""
+
     def __init__(
         self,
         uow_factory: Callable[[], BaseUnitOfWork],
-        denylist: BaseTokenDenylist,
+        denylist: DenylistRepository,
         dispatcher: EventDispatcher,
     ) -> None:
         super().__init__(uow_factory)
@@ -71,7 +73,7 @@ class AuthService(BaseService):
     def logout(self, jti: str, exp: int) -> ServiceResult[None]:
         """Revokes an access token by placing it on the denylist."""
         self._denylist.add(jti, exp)
-        self._dispatcher.dispatch([UserLoggedOut(jti=jti)])
+        self._dispatcher.dispatch(UserLoggedOut(jti=jti))
         return ServiceResult(data=None)
 
     def is_token_revoked(self, jti: str) -> bool:

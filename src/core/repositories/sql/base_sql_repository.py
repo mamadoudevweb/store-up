@@ -52,8 +52,8 @@ class BaseSqlRepository(BaseRepository[E, F]):
             self._session.delete(model)
             self._session.flush()
 
-    def exists(self, **kwargs: Any) -> bool:
-        query = select(self.model).filter_by(**kwargs)
+    def exists(self, entity_filter: F) -> bool:
+        query = self._apply_filter(select(self.model), entity_filter)
         return self._session.scalar(select(query.exists())) or False
 
     def _apply_filter(self, query: Select[Any], entity_filter: F) -> Select[Any]:

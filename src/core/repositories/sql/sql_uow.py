@@ -19,7 +19,7 @@ class SqlUnitOfWork(BaseUnitOfWork):
         self._dispatcher = dispatcher
         self._repository_classes = repository_classes
         self._session: Session | None = None
-        self._tracked: list[Entity] = []
+        self._tracked: list[Entity[Any]] = []
 
     def __enter__(self) -> "SqlUnitOfWork":
         self._session = self._session_factory()
@@ -27,7 +27,7 @@ class SqlUnitOfWork(BaseUnitOfWork):
             setattr(self, attr_name, repo_cls(self._session))
         return self
 
-    def track(self, entity: Entity) -> None:
+    def track(self, entity: Entity[Any]) -> None:
         """Services register entities that have pending domain events so
         they get dispatched only after a successful commit."""
         self._tracked.append(entity)

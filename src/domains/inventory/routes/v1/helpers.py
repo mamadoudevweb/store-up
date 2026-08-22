@@ -1,5 +1,5 @@
 """Inventory route helpers."""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from flask import current_app
 
 if TYPE_CHECKING:

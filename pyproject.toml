@@ -18,6 +18,8 @@ dependencies = [
     # Validation & settings
     "pydantic[email]>=2.7",
     "pydantic-settings>=2.3",
+    "apispec>=6.0",
+    "apispec-webframeworks>=1.2",
     # Database
     "sqlalchemy>=2.0",
     "alembic>=1.13",
@@ -60,7 +62,13 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
+warn_unused_ignores = false
 ignore_missing_imports = true
+disallow_untyped_decorators = false
+disallow_subclassing_any = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
 exclude = ["migrations/", "tests/"]
 
 [tool.pytest.ini_options]

@@ -7,7 +7,7 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 
 from src.app.identity import get_current_actor
-from src.core.routes.envelope import ok
+from src.core.routes.envelope import ok, EnvelopeResponse
 from src.domains.inventory.repositories.filters import InventoryItemFilter
 from src.domains.inventory.routes.v1.helpers import _get_inventory
 from src.domains.inventory.routes.v1.schemas.inventory_schemas import (
@@ -20,7 +20,8 @@ from src.domains.inventory.routes.v1.schemas.inventory_schemas import (
 bp = Blueprint("inventory_item", __name__)
 
 
-def _serialize_item(item) -> dict:
+from typing import Any
+def _serialize_item(item) -> dict[str, Any]:
     # Convert UUIDs to strings for pydantic parsing
     item_dict = {
         "id": str(item.id),
@@ -35,7 +36,7 @@ def _serialize_item(item) -> dict:
 
 @bp.get("")
 @jwt_required()
-def list_items():  # type: ignore[no-untyped-def]
+def list_items() -> EnvelopeResponse:
     actor = get_current_actor()
     product_id_str = request.args.get("product_id")
     filters = InventoryItemFilter(
@@ -60,7 +61,7 @@ def list_items():  # type: ignore[no-untyped-def]
 
 @bp.get("/<uuid:product_id>")
 @jwt_required()
-def get_item(product_id: UUID):  # type: ignore[no-untyped-def]
+def get_item(product_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     result = _get_inventory().item.get_inventory_item(actor, InventoryItemFilter(product_id=product_id))
     return ok(_serialize_item(result.data))
@@ -68,7 +69,7 @@ def get_item(product_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.post("/<uuid:product_id>/adjust")
 @jwt_required()
-def adjust_stock(product_id: UUID):  # type: ignore[no-untyped-def]
+def adjust_stock(product_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     body = AdjustStockRequest.model_validate(request.get_json(force=True))
     result = _get_inventory().item.adjust_stock(
@@ -83,7 +84,7 @@ def adjust_stock(product_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.post("/<uuid:product_id>/reserve")
 @jwt_required()
-def reserve_stock(product_id: UUID):  # type: ignore[no-untyped-def]
+def reserve_stock(product_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     body = ReserveStockRequest.model_validate(request.get_json(force=True))
     result = _get_inventory().item.reserve_stock(
@@ -97,7 +98,7 @@ def reserve_stock(product_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.post("/<uuid:product_id>/release")
 @jwt_required()
-def release_stock(product_id: UUID):  # type: ignore[no-untyped-def]
+def release_stock(product_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     body = ReserveStockRequest.model_validate(request.get_json(force=True))
     result = _get_inventory().item.release_stock(
@@ -111,7 +112,7 @@ def release_stock(product_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.post("/<uuid:product_id>/ship")
 @jwt_required()
-def ship_stock(product_id: UUID):  # type: ignore[no-untyped-def]
+def ship_stock(product_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     body = ReserveStockRequest.model_validate(request.get_json(force=True))
     result = _get_inventory().item.ship_stock(
@@ -125,7 +126,7 @@ def ship_stock(product_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.put("/<uuid:product_id>/threshold")
 @jwt_required()
-def set_threshold(product_id: UUID):  # type: ignore[no-untyped-def]
+def set_threshold(product_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     body = SetLowStockThresholdRequest.model_validate(request.get_json(force=True))
     result = _get_inventory().item.set_low_stock_threshold(

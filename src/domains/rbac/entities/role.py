@@ -1,5 +1,6 @@
 """Role entity."""
 from __future__ import annotations
+from uuid import UUID
 
 import uuid
 from dataclasses import dataclass, field
@@ -9,7 +10,7 @@ from src.core.entities.base_entity import Entity
 
 
 @dataclass(kw_only=True)
-class Role(Entity):
+class Role(Entity[UUID]):
     name: str
     description: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

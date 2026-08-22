@@ -21,7 +21,8 @@ class CategoryMapper(Mapper[Category, CategoryModel]):
 
     def to_model(self, entity: Category, model: CategoryModel | None = None) -> CategoryModel:
         m = model or CategoryModel()
-        m.id = entity.id
+        if entity.id is not None:
+            m.id = entity.id
         m.name = entity.name
         m.parent_id = entity.parent_id
         return m
@@ -39,7 +40,8 @@ class BrandMapper(Mapper[Brand, BrandModel]):
 
     def to_model(self, entity: Brand, model: BrandModel | None = None) -> BrandModel:
         m = model or BrandModel()
-        m.id = entity.id
+        if entity.id is not None:
+            m.id = entity.id
         m.name = entity.name
         m.description = entity.description
         m.logo_path = entity.logo_path
@@ -63,7 +65,8 @@ class ProductMapper(Mapper[Product, ProductModel]):
 
     def to_model(self, entity: Product, model: ProductModel | None = None) -> ProductModel:
         m = model or ProductModel()
-        m.id = entity.id
+        if entity.id is not None:
+            m.id = entity.id
         m.sku = entity.sku
         m.name = entity.name
         m.description = entity.description
@@ -89,7 +92,8 @@ class ProductImageMapper(Mapper[ProductImage, ProductImageModel]):
         self, entity: ProductImage, model: ProductImageModel | None = None
     ) -> ProductImageModel:
         m = model or ProductImageModel()
-        m.id = entity.id
+        if entity.id is not None:
+            m.id = entity.id
         m.product_id = entity.product_id
         m.file_path = entity.file_path
         m.is_primary = entity.is_primary

@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 
 from src.domains.auth.services.auth import AuthService
-from src.domains.auth.repositories.memory_denylist import InMemoryTokenDenylist
+from src.domains.auth.repositories.memory_denylist import MemoryDenylistRepository
 from src.domains.auth.exceptions import InvalidCredentials
 from src.domains.accounts.services import AccountDomainService
 from src.domains.accounts.services.account import Service as AccountService
@@ -19,7 +19,7 @@ def auth_service(uow_factory):
     # For integration testing we instantiate exactly what's needed
     
     dispatcher = EventDispatcher()
-    denylist = InMemoryTokenDenylist()
+    denylist = MemoryDenylistRepository()
     
     return AuthService(
         uow_factory=uow_factory,

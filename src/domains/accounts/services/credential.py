@@ -38,13 +38,13 @@ class Service(BaseService):
             if not account.is_active():
                 raise AccountSuspendedError()
                 
-            if uow.credentials.exists(account_id=account_id):
+            if uow.credentials.exists(CredentialFilter(account_id=account_id)):
                 raise CredentialAlreadyExists()
                 
-            if uow.credentials.exists(username=username):
+            if uow.credentials.exists(CredentialFilter(username=username)):
                 raise UsernameConflict()
                 
-            if uow.credentials.exists(email=email):
+            if uow.credentials.exists(CredentialFilter(email=email)):
                 raise EmailConflict()
                 
             password_hash = bcrypt.hashpw(
@@ -79,10 +79,10 @@ class Service(BaseService):
                 raise CredentialNotFound()
             
             if username and username != cred.username:
-                if uow.credentials.exists(username=username):
+                if uow.credentials.exists(CredentialFilter(username=username)):
                     raise UsernameConflict()
             if email and email != cred.email:
-                if uow.credentials.exists(email=email):
+                if uow.credentials.exists(CredentialFilter(email=email)):
                     raise EmailConflict()
                     
             password_hash: str | None = None

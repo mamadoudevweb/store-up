@@ -3,14 +3,17 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from src.domains.accounts.repositories.sql.orms.account_model import AccountModel
 from sqlalchemy import DateTime, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.app.extensions import db
 
 
-class AccountRoleModel(db.Model):
+class AccountRoleModel(db.Model):  # type: ignore[name-defined]
     __tablename__ = "account_roles"
 
     account_id: Mapped[uuid.UUID] = mapped_column(

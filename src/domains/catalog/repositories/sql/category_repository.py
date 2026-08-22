@@ -27,8 +27,4 @@ class SqlCategoryRepository(BaseSqlRepository[Category, CategoryFilter]):
             q = q.where(CategoryModel.parent_id == entity_filter.parent_id)
         return q
 
-    def exists(self, entity_filter: CategoryFilter) -> bool:
-        sub = select(CategoryModel)
-        sub = self._apply_filter(sub, entity_filter)
-        stmt = select(sql_exists(sub.subquery()))
-        return self._session.scalar(stmt) or False
+

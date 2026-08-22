@@ -10,14 +10,14 @@ from src.app.identity import get_current_actor
 from src.domains.rbac.repositories.filters import RoleFilter
 from src.domains.rbac.routes.v1.helpers import get_rbac_service, serialize_role, paginated
 from src.domains.rbac.routes.v1.schemas.rbac_schemas import CreateRoleRequest
-from src.core.routes.envelope import ok
+from src.core.routes.envelope import ok, EnvelopeResponse
 
 bp = Blueprint("role", __name__)
 
 
 @bp.post("")
 @jwt_required()
-def create_role():  # type: ignore[no-untyped-def]
+def create_role() -> EnvelopeResponse:
     actor = get_current_actor()
     body = CreateRoleRequest.model_validate(request.get_json(force=True))
     result = get_rbac_service().role.create_role(
@@ -30,7 +30,7 @@ def create_role():  # type: ignore[no-untyped-def]
 
 @bp.get("")
 @jwt_required()
-def list_roles():  # type: ignore[no-untyped-def]
+def list_roles() -> EnvelopeResponse:
     actor = get_current_actor()
     # Need to authorize list? Wait, list is done via uow directly here.
     # Let's call the service if we want to authorize it, or just authorize here.
@@ -47,7 +47,7 @@ def list_roles():  # type: ignore[no-untyped-def]
 
 @bp.get("/<uuid:role_id>")
 @jwt_required()
-def get_role(role_id: UUID):  # type: ignore[no-untyped-def]
+def get_role(role_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     result = get_rbac_service().role.get_role(actor, role_id)
     return ok(serialize_role(result.data))
@@ -55,7 +55,7 @@ def get_role(role_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.delete("/<uuid:role_id>")
 @jwt_required()
-def delete_role(role_id: UUID):  # type: ignore[no-untyped-def]
+def delete_role(role_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     svc = get_rbac_service()
     svc.role.delete_role(actor, role_id)

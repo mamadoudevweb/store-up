@@ -7,7 +7,7 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 
 from src.app.identity import get_current_actor
-from src.core.routes.envelope import ok
+from src.core.routes.envelope import ok, EnvelopeResponse
 from src.domains.inventory.repositories.filters import StockMovementFilter
 from src.domains.inventory.routes.v1.helpers import _get_inventory
 from src.domains.inventory.routes.v1.schemas.inventory_schemas import StockMovementOutSchema
@@ -15,7 +15,8 @@ from src.domains.inventory.routes.v1.schemas.inventory_schemas import StockMovem
 bp = Blueprint("stock_movement", __name__)
 
 
-def _serialize_movement(movement) -> dict:
+from typing import Any
+def _serialize_movement(movement) -> dict[str, Any]:
     mov_dict = {
         "id": str(movement.id),
         "product_id": str(movement.product_id),
@@ -29,7 +30,7 @@ def _serialize_movement(movement) -> dict:
 
 @bp.get("")
 @jwt_required()
-def list_movements():  # type: ignore[no-untyped-def]
+def list_movements() -> EnvelopeResponse:
     actor = get_current_actor()
     product_id_str = request.args.get("product_id")
     filters = StockMovementFilter(
@@ -56,7 +57,7 @@ def list_movements():  # type: ignore[no-untyped-def]
 
 @bp.get("/<uuid:movement_id>")
 @jwt_required()
-def get_movement(movement_id: UUID):  # type: ignore[no-untyped-def]
+def get_movement(movement_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     result = _get_inventory().movement.get_movement(actor, movement_id)
     return ok(_serialize_movement(result.data))

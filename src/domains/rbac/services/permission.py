@@ -11,7 +11,7 @@ from src.core.repositories.base_uow import BaseUnitOfWork
 from src.domains.rbac.entities import Permission
 from src.domains.rbac.events import PermissionCreated
 from src.domains.rbac.exceptions import PermissionAlreadyExists, PermissionNotFound
-from src.domains.rbac.repositories.filters import PermissionFilter
+from src.domains.rbac.repositories.filters import PermissionFilter, RolePermissionFilter
 
 
 class PermissionService(BaseService):
@@ -21,7 +21,7 @@ class PermissionService(BaseService):
     def create_permission(self, actor: SupportsPermissionCheck, resource: str, action: str, description: str | None = None) -> ServiceResult[Permission]:
         self._authorize(actor, "rbac", "permission", "create")
         with self._uow_factory() as uow:
-            if uow.permissions.exists(resource=resource, action=action):
+            if uow.permissions.exists(PermissionFilter(resource=resource, action=action)):
                 raise PermissionAlreadyExists(f"Permission '{resource}:{action}' already exists.")
 
             added_perm = Permission(resource=resource, action=action, description=description)
@@ -60,7 +60,7 @@ class PermissionService(BaseService):
                 return ServiceResult(data=False)
 
             for role_id in parsed_ids:
-                if uow.role_permissions.exists(role_id=role_id, permission_id=permission.id):
+                if uow.role_permissions.exists(RolePermissionFilter(role_id=role_id, permission_id=permission.id)):
                     return ServiceResult(data=True)
 
             return ServiceResult(data=False)

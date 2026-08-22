@@ -23,11 +23,13 @@ from src.core.routes.envelope import ok
 router = Blueprint("accounts", __name__)
 
 
+from typing import Any
+
 def _get_domain_service():
     return current_app.extensions["domain_service"]
 
 
-def _serialize_account(account) -> dict:
+def _serialize_account(account) -> dict[str, Any]:
     return AccountResponse(
         id=account.id,
         first_name=account.first_name,
@@ -39,7 +41,7 @@ def _serialize_account(account) -> dict:
     ).model_dump(mode="json")
 
 
-def _serialize_credential(cred) -> dict:
+def _serialize_credential(cred) -> dict[str, Any]:
     return CredentialResponse(
         id=cred.id,
         account_id=cred.account_id,

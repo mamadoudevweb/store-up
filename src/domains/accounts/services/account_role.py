@@ -34,7 +34,7 @@ class Service(BaseService):
             if not account:
                 raise AccountNotFound()
             
-            if uow.account_roles.exists(account_id=account_id, role_id=role_id):
+            if uow.account_roles.exists(AccountRoleFilter(account_id=account_id, role_id=role_id)):
                 raise RoleAlreadyAssigned()
             assignment = AccountRole.create(account_id, role_id, assigned_by, domain_scope)
             uow.account_roles.add(assignment)

@@ -8,7 +8,7 @@ from uuid import UUID
 from src.core.entities.base_entity import Entity
 
 @dataclass(kw_only=True)
-class AccountRole(Entity):
+class AccountRole(Entity[UUID]):
     """Association between an Account and a Role, optionally scoped to a domain."""
     account_id: UUID
     role_id: UUID

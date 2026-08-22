@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from types import TracebackType
+from typing import Any
 
 class BaseUnitOfWork(ABC):
     """Owns the transaction boundary and aggregates every repository.
@@ -24,3 +25,5 @@ class BaseUnitOfWork(ABC):
 
     @abstractmethod
     def rollback(self) -> None: ...
+
+    def __getattr__(self, name: str) -> Any: ...

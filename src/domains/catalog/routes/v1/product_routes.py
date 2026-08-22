@@ -7,7 +7,7 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 
 from src.app.identity import get_current_actor
-from src.core.routes.envelope import fail, ok
+from src.core.routes.envelope import EnvelopeResponse, fail, ok
 from src.domains.catalog.repositories.filters import ProductFilter
 from src.domains.catalog.routes.v1.helpers import (
     _get_catalog,
@@ -26,7 +26,7 @@ bp = Blueprint("product", __name__)
 
 @bp.post("")
 @jwt_required()
-def create_product():  # type: ignore[no-untyped-def]
+def create_product() -> EnvelopeResponse:
     actor = get_current_actor()
     body = CreateProductRequest.model_validate(request.get_json(force=True))
     result = _get_catalog().product.create_product(
@@ -44,7 +44,7 @@ def create_product():  # type: ignore[no-untyped-def]
 
 @bp.get("")
 @jwt_required()
-def list_products():  # type: ignore[no-untyped-def]
+def list_products() -> EnvelopeResponse:
     actor = get_current_actor()
     category_id_str = request.args.get("category_id")
     brand_id_str = request.args.get("brand_id")
@@ -75,7 +75,7 @@ def list_products():  # type: ignore[no-untyped-def]
 
 @bp.get("/<uuid:product_id>")
 @jwt_required()
-def get_product(product_id: UUID):  # type: ignore[no-untyped-def]
+def get_product(product_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     result = _get_catalog().product.get_product(actor, product_id)
     return ok(serialize_product(result.data))
@@ -83,7 +83,7 @@ def get_product(product_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.put("/<uuid:product_id>")
 @jwt_required()
-def update_product(product_id: UUID):  # type: ignore[no-untyped-def]
+def update_product(product_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     body = UpdateProductRequest.model_validate(request.get_json(force=True))
     result = _get_catalog().product.update_product(
@@ -103,7 +103,7 @@ def update_product(product_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.delete("/<uuid:product_id>")
 @jwt_required()
-def delete_product(product_id: UUID):  # type: ignore[no-untyped-def]
+def delete_product(product_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     _get_catalog().product.delete_product(actor, product_id)
     return ok(None)
@@ -113,7 +113,7 @@ def delete_product(product_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.post("/<uuid:product_id>/images")
 @jwt_required()
-def upload_product_image(product_id: UUID):  # type: ignore[no-untyped-def]
+def upload_product_image(product_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     if "file" not in request.files:
         return fail("BAD_REQUEST", "No file part provided", 400)
@@ -135,7 +135,7 @@ def upload_product_image(product_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.get("/<uuid:product_id>/images")
 @jwt_required()
-def list_product_images(product_id: UUID):  # type: ignore[no-untyped-def]
+def list_product_images(product_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     result = _get_catalog().product_image.list_images(actor, product_id)
     page = result.data
@@ -152,7 +152,7 @@ def list_product_images(product_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.put("/<uuid:product_id>/images/<uuid:image_id>/primary")
 @jwt_required()
-def set_primary_image(product_id: UUID, image_id: UUID):  # type: ignore[no-untyped-def]
+def set_primary_image(product_id: UUID, image_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     result = _get_catalog().product_image.set_primary(actor, product_id, image_id)
     return ok(serialize_product_image(result.data))
@@ -160,7 +160,7 @@ def set_primary_image(product_id: UUID, image_id: UUID):  # type: ignore[no-unty
 
 @bp.delete("/<uuid:product_id>/images/<uuid:image_id>")
 @jwt_required()
-def delete_product_image(product_id: UUID, image_id: UUID):  # type: ignore[no-untyped-def]
+def delete_product_image(product_id: UUID, image_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     _get_catalog().product_image.delete_image(actor, product_id, image_id)
     return ok(None)

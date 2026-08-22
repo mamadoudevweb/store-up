@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 
-class BaseTokenDenylist(ABC):
+class DenylistRepository(ABC):
     """Contract for token revocation storage."""
 
     @abstractmethod

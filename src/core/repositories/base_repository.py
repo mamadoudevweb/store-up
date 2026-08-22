@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
+from uuid import UUID
 from src.core.entities.base_entity import Entity
 from src.core.entities.pagination import Pagination, EntityFilter
 
-E = TypeVar("E", bound=Entity)
+E = TypeVar("E", bound=Entity[Any])
 F = TypeVar("F", bound=EntityFilter)
-EntityId = int
+EntityId = int | UUID
 
 class BaseRepository(ABC, Generic[E, F]):
     """Repositories never own a session — it's injected by the UoW.
@@ -33,7 +34,7 @@ class BaseRepository(ABC, Generic[E, F]):
     def delete(self, entity: E) -> None: ...
 
     @abstractmethod
-    def exists(self, **kwargs: Any) -> bool: ...
+    def exists(self, entity_filter: F) -> bool: ...
 
     @abstractmethod
     def _apply_filter(self, query: Any, entity_filter: F) -> Any:

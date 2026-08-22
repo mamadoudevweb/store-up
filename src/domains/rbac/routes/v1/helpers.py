@@ -11,17 +11,17 @@ from src.domains.rbac.routes.v1.schemas.rbac_schemas import (
 from src.core.routes.envelope import ok, EnvelopeResponse
 
 
-def get_rbac_service():  # type: ignore[no-untyped-def]
+def get_rbac_service() -> Any:
     """Retrieve the RbacService from the current app context."""
     return current_app.extensions["domain_service"].rbac
 
 
-def serialize_role(role) -> dict:  # type: ignore[no-untyped-def]
+def serialize_role(role) -> dict[str, Any]:  # type: ignore[no-untyped-def]
     """Serialize a Role entity."""
     return RoleResponse.model_validate(role).model_dump(mode="json")
 
 
-def serialize_permission(perm) -> dict:  # type: ignore[no-untyped-def]
+def serialize_permission(perm) -> dict[str, Any]:  # type: ignore[no-untyped-def]
     """Serialize a Permission entity."""
     return PermissionResponse.model_validate(perm).model_dump(mode="json")
 

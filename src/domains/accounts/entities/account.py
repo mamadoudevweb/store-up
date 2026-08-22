@@ -13,15 +13,12 @@ class AccountStatus(str, Enum):
     SUSPENDED = "suspended"
 
 @dataclass(kw_only=True)
-class Account(Entity):
+class Account(Entity[UUID]):
     """Identity entity — no login info, no roles."""
-    id: UUID
     first_name: str
     last_name: str
     birth_date: date | None
     status: AccountStatus
-    created_at: datetime
-    updated_at: datetime
 
     @classmethod
     def create(
@@ -41,6 +38,7 @@ class Account(Entity):
             updated_at=now,
         )
         from src.domains.accounts.events import AccountCreated
+        assert account.id is not None
         account.register_event(AccountCreated(account_id=account.id))
         return account
 
@@ -48,6 +46,7 @@ class Account(Entity):
         self.status = AccountStatus.SUSPENDED
         self.updated_at = datetime.now(timezone.utc)
         from src.domains.accounts.events import AccountSuspended
+        assert self.id is not None
         self.register_event(AccountSuspended(account_id=self.id))
 
     def update(
@@ -64,6 +63,7 @@ class Account(Entity):
             self.birth_date = birth_date
         self.updated_at = datetime.now(timezone.utc)
         from src.domains.accounts.events import AccountUpdated
+        assert self.id is not None
         self.register_event(AccountUpdated(account_id=self.id))
 
     @property

@@ -22,7 +22,7 @@ class IdentityContext:
         """Fetch the account's roles and check if they have the given permission."""
         # 1. Fetch roles for the account
         roles_result = self.domain_service.accounts.account_role.list_for_account(self.account_id)
-        role_ids = [str(r.role_id) for r in roles_result.data]
+        role_ids: list[str | uuid.UUID] = [str(r.role_id) for r in roles_result.data]
 
         if not role_ids:
             return False
@@ -33,7 +33,7 @@ class IdentityContext:
             resource=f"{domain}:{entity}",
             action=action
         )
-        return check_result.data
+        return bool(check_result.data)
 
 
 def get_current_actor() -> IdentityContext:

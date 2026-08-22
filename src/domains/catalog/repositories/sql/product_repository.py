@@ -37,8 +37,4 @@ class SqlProductRepository(BaseSqlRepository[Product, ProductFilter]):
                 q = q.order_by(col.desc() if entity_filter.sort_desc else col.asc())
         return q
 
-    def exists(self, entity_filter: ProductFilter) -> bool:
-        sub = select(ProductModel)
-        sub = self._apply_filter(sub, entity_filter)
-        stmt = select(sql_exists(sub.subquery()))
-        return self._session.scalar(stmt) or False
+

@@ -10,14 +10,14 @@ from src.app.identity import get_current_actor
 from src.domains.rbac.repositories.filters import PermissionFilter
 from src.domains.rbac.routes.v1.helpers import get_rbac_service, serialize_permission, paginated
 from src.domains.rbac.routes.v1.schemas.rbac_schemas import CreatePermissionRequest
-from src.core.routes.envelope import ok
+from src.core.routes.envelope import ok, EnvelopeResponse
 
 bp = Blueprint("permission", __name__)
 
 
 @bp.post("")
 @jwt_required()
-def create_permission():  # type: ignore[no-untyped-def]
+def create_permission() -> EnvelopeResponse:
     actor = get_current_actor()
     body = CreatePermissionRequest.model_validate(request.get_json(force=True))
     result = get_rbac_service().permission.create_permission(
@@ -31,7 +31,7 @@ def create_permission():  # type: ignore[no-untyped-def]
 
 @bp.get("")
 @jwt_required()
-def list_permissions():  # type: ignore[no-untyped-def]
+def list_permissions() -> EnvelopeResponse:
     actor = get_current_actor()
     get_rbac_service().permission._authorize(actor, "rbac", "permission", "list")
     filters = PermissionFilter(
@@ -47,7 +47,7 @@ def list_permissions():  # type: ignore[no-untyped-def]
 
 @bp.get("/<uuid:permission_id>")
 @jwt_required()
-def get_permission(permission_id: UUID):  # type: ignore[no-untyped-def]
+def get_permission(permission_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     result = get_rbac_service().permission.get_permission(actor, permission_id)
     return ok(serialize_permission(result.data))
@@ -55,7 +55,7 @@ def get_permission(permission_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.delete("/<uuid:permission_id>")
 @jwt_required()
-def delete_permission(permission_id: UUID):  # type: ignore[no-untyped-def]
+def delete_permission(permission_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     svc = get_rbac_service()
     svc.permission.delete_permission(actor, permission_id)

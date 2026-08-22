@@ -1,5 +1,6 @@
 """StockMovement entity."""
 from __future__ import annotations
+from uuid import UUID
 
 import uuid
 from dataclasses import dataclass
@@ -9,13 +10,12 @@ from src.core.entities.base_entity import BaseEntity
 
 
 @dataclass(kw_only=True)
-class StockMovement(BaseEntity):
+class StockMovement(BaseEntity[UUID]):
     id: uuid.UUID
     product_id: uuid.UUID
     quantity_change: int
     reason: str
     reference_id: str | None = None
-    created_at: datetime
 
     @classmethod
     def create(

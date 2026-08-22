@@ -23,7 +23,8 @@ class AccountMapper(Mapper[Account, AccountModel]):
 
     def to_model(self, entity: Account, model: AccountModel | None = None) -> AccountModel:
         model = model or AccountModel()
-        model.id = entity.id
+        if entity.id is not None:
+            model.id = entity.id
         model.first_name = entity.first_name
         model.last_name = entity.last_name
         model.birth_date = entity.birth_date
@@ -47,7 +48,8 @@ class CredentialMapper(Mapper[Credential, CredentialModel]):
 
     def to_model(self, entity: Credential, model: CredentialModel | None = None) -> CredentialModel:
         model = model or CredentialModel()
-        model.id = entity.id
+        if entity.id is not None:
+            model.id = entity.id
         model.account_id = entity.account_id
         model.username = entity.username
         model.email = entity.email

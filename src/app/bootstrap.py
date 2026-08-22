@@ -10,7 +10,9 @@ class SuperuserConfigError(AppError):
 
 SUPERUSER_ROLE = "superuser"
 
-def ensure_superuser(domain_service: "DomainService", settings: getattr) -> None:
+from typing import TYPE_CHECKING, Any
+
+def ensure_superuser(domain_service: "DomainService", settings: Any) -> None:
     missing: list[str] = [
         f for f in ("SUPERUSER_USERNAME", "SUPERUSER_EMAIL", "SUPERUSER_PASSWORD") if not getattr(settings, f, None)
     ]
@@ -24,6 +26,7 @@ def ensure_superuser(domain_service: "DomainService", settings: getattr) -> None
     try:
         acc_res = domain_service.accounts.account.create_account(first_name="Super", last_name="User")
         account = acc_res.data
+        assert account.id is not None
         domain_service.accounts.credential.set_credentials(
             account_id=account.id,
             username=username,

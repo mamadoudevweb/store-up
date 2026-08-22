@@ -3,6 +3,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.domains.accounts.repositories.sql.orms.account_model import AccountModel
 
 from sqlalchemy import DateTime, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -10,7 +14,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.app.extensions import db
 
 
-class CredentialModel(db.Model):
+class CredentialModel(db.Model):  # type: ignore[name-defined]
     __tablename__ = "credentials"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)

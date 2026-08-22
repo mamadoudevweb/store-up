@@ -4,14 +4,14 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import redis
 
-from src.domains.auth.repositories.base_denylist import BaseTokenDenylist
+from src.domains.auth.repositories.base_denylist import DenylistRepository
 
 
-class RedisTokenDenylist(BaseTokenDenylist):
-    """Repository for managing revoked tokens using Redis."""
+class RedisDenylistRepository(DenylistRepository):
+    """Redis-backed JWT denylist repository."""
     
-    def __init__(self, client: redis.Redis) -> None:
-        self._client = client
+    def __init__(self, redis_client: redis.Redis[str]) -> None:
+        self._client = redis_client
         self._prefix = "denylist:"
 
     def add(self, jti: str, exp: datetime | int) -> None:

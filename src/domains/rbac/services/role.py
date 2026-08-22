@@ -20,7 +20,7 @@ class RoleService(BaseService):
     def create_role(self, actor: SupportsPermissionCheck, name: str, description: str | None = None) -> ServiceResult[Role]:
         self._authorize(actor, "rbac", "role", "create")
         with self._uow_factory() as uow:
-            if uow.roles.exists(name=name):
+            if uow.roles.exists(RoleFilter(name=name)):
                 raise RoleAlreadyExists(f"Role '{name}' already exists.")
 
             role = Role(name=name, description=description)

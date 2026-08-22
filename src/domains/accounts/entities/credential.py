@@ -8,16 +8,13 @@ from uuid import UUID, uuid4
 from src.core.entities.base_entity import Entity
 
 @dataclass(kw_only=True)
-class Credential(Entity):
+class Credential(Entity[UUID]):
     """Login credential entity — separated from Account identity."""
-    id: UUID
     account_id: UUID
     username: str
     email: str
     password_hash: str
     last_login_at: datetime | None
-    created_at: datetime
-    updated_at: datetime
 
     @classmethod
     def create(
@@ -39,6 +36,7 @@ class Credential(Entity):
             updated_at=now,
         )
         from src.domains.accounts.events import CredentialSet
+        assert cred.id is not None
         cred.register_event(CredentialSet(account_id=account_id, credential_id=cred.id))
         return cred
 

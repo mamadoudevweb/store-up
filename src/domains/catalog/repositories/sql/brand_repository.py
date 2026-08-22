@@ -27,8 +27,4 @@ class SqlBrandRepository(BaseSqlRepository[Brand, BrandFilter]):
             q = q.where(BrandModel.is_active == entity_filter.is_active)
         return q
 
-    def exists(self, entity_filter: BrandFilter) -> bool:
-        sub = select(BrandModel)
-        sub = self._apply_filter(sub, entity_filter)
-        stmt = select(sql_exists(sub.subquery()))
-        return self._session.scalar(stmt) or False
+

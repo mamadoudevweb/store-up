@@ -7,7 +7,7 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required
 
 from src.app.identity import get_current_actor
-from src.core.routes.envelope import ok
+from src.core.routes.envelope import ok, EnvelopeResponse
 from src.domains.catalog.repositories.filters import BrandFilter
 from src.domains.catalog.routes.v1.helpers import _get_catalog, serialize_brand
 from src.domains.catalog.routes.v1.schemas.product_schemas import (
@@ -20,7 +20,7 @@ bp = Blueprint("brand", __name__)
 
 @bp.post("")
 @jwt_required()
-def create_brand():  # type: ignore[no-untyped-def]
+def create_brand() -> EnvelopeResponse:
     actor = get_current_actor()
     body = CreateBrandRequest.model_validate(request.get_json(force=True))
     result = _get_catalog().brand.create_brand(
@@ -33,7 +33,7 @@ def create_brand():  # type: ignore[no-untyped-def]
 
 @bp.get("")
 @jwt_required()
-def list_brands():  # type: ignore[no-untyped-def]
+def list_brands() -> EnvelopeResponse:
     actor = get_current_actor()
     is_active_str = request.args.get("is_active")
     filters = BrandFilter(
@@ -57,7 +57,7 @@ def list_brands():  # type: ignore[no-untyped-def]
 
 @bp.get("/<uuid:brand_id>")
 @jwt_required()
-def get_brand(brand_id: UUID):  # type: ignore[no-untyped-def]
+def get_brand(brand_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     result = _get_catalog().brand.get_brand(actor, brand_id)
     return ok(serialize_brand(result.data))
@@ -65,7 +65,7 @@ def get_brand(brand_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.put("/<uuid:brand_id>")
 @jwt_required()
-def update_brand(brand_id: UUID):  # type: ignore[no-untyped-def]
+def update_brand(brand_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     body = UpdateBrandRequest.model_validate(request.get_json(force=True))
     result = _get_catalog().brand.update_brand(
@@ -79,7 +79,7 @@ def update_brand(brand_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.delete("/<uuid:brand_id>")
 @jwt_required()
-def delete_brand(brand_id: UUID):  # type: ignore[no-untyped-def]
+def delete_brand(brand_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     _get_catalog().brand.delete_brand(actor, brand_id)
     return ok(None)
@@ -87,7 +87,7 @@ def delete_brand(brand_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.post("/<uuid:brand_id>/logo")
 @jwt_required()
-def upload_logo(brand_id: UUID):  # type: ignore[no-untyped-def]
+def upload_logo(brand_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     if "file" not in request.files:
         from src.core.routes.envelope import fail
@@ -102,7 +102,7 @@ def upload_logo(brand_id: UUID):  # type: ignore[no-untyped-def]
 
 @bp.delete("/<uuid:brand_id>/logo")
 @jwt_required()
-def delete_logo(brand_id: UUID):  # type: ignore[no-untyped-def]
+def delete_logo(brand_id: UUID) -> EnvelopeResponse:
     actor = get_current_actor()
     result = _get_catalog().brand.delete_logo(actor, brand_id)
     return ok(serialize_brand(result.data))

@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import List
+from typing import List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.domains.rbac.repositories.sql.orms.role_model import RoleModel
 
 from sqlalchemy import DateTime, String, Uuid, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -11,7 +14,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.app.extensions import db
 
 
-class PermissionModel(db.Model):
+class PermissionModel(db.Model):  # type: ignore[name-defined]
     __tablename__ = "permissions"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)

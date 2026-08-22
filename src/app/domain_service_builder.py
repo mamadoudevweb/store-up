@@ -6,7 +6,7 @@ import redis
 
 from src.domains.accounts.services import AccountDomainService
 from src.domains.auth.services.auth import AuthService
-from src.domains.auth.repositories.redis_denylist import RedisTokenDenylist
+from src.domains.auth.repositories.redis_denylist import RedisDenylistRepository
 from src.domains.rbac.services import RbacDomainService
 from src.domains.catalog.services import CatalogDomainService
 from src.domains.inventory.services import InventoryDomainService
@@ -16,13 +16,13 @@ from src.domains.inventory.services.stock_movement_service import StockMovementS
 
 def build_domain_service(
     uow_factory: Callable[[], BaseUnitOfWork],
-    redis_client: redis.Redis,
+    redis_client: redis.Redis[str],
     dispatcher: EventDispatcher,
     upload_folder: str = "uploads",
 ) -> DomainService:
     return DomainService(
         accounts=AccountDomainService(uow_factory),
-        auth=AuthService(uow_factory, RedisTokenDenylist(redis_client), dispatcher),
+        auth=AuthService(uow_factory, RedisDenylistRepository(redis_client), dispatcher),
         rbac=RbacDomainService(uow_factory),
         catalog=CatalogDomainService(uow_factory, upload_folder),
         inventory=InventoryDomainService(

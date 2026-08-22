@@ -1,5 +1,6 @@
 """Permission entity."""
 from __future__ import annotations
+from uuid import UUID
 
 import uuid
 from dataclasses import dataclass, field
@@ -9,7 +10,7 @@ from src.core.entities.base_entity import Entity
 
 
 @dataclass(kw_only=True)
-class Permission(Entity):
+class Permission(Entity[UUID]):
     resource: str      # e.g., 'products', 'accounts'
     action: str        # e.g., 'read', 'write', 'delete'
     description: str | None = None

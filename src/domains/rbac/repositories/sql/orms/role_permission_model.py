@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from src.app.extensions import db
 
 
-class RolePermissionModel(db.Model):
+class RolePermissionModel(db.Model):  # type: ignore[name-defined]
     __tablename__ = "role_permissions"
 
     role_id: Mapped[uuid.UUID] = mapped_column(

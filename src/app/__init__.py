@@ -25,8 +25,8 @@ def register_domain_event_handlers(dispatcher: EventDispatcher, domain_service: 
     inventory_event_handlers.register(dispatcher, domain_service)
 
 def create_app(env: str | None = None) -> Flask:
-    env = env or os.getenv("FLASK_ENV", "development")
-    config = get_config(env)
+    env_name = env or os.getenv("FLASK_ENV", "development") or "development"
+    config = get_config(env_name)
 
     app = Flask(__name__)
     app.config.from_mapping(config.to_flask_config())

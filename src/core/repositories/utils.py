@@ -1,7 +1,7 @@
-from typing import Protocol, TypeVar
+from typing import Any, Protocol, TypeVar
 from src.core.entities.base_entity import Entity
 
-E = TypeVar("E", bound=Entity)
+E = TypeVar("E", bound=Entity[Any])
 M = TypeVar("M")
 
 class Mapper(Protocol[E, M]):
