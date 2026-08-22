@@ -20,8 +20,8 @@ class Account(Entity):
     last_name: str
     birth_date: date | None
     status: AccountStatus
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @classmethod
     def create(
@@ -30,15 +30,11 @@ class Account(Entity):
         last_name: str,
         birth_date: date | None = None,
     ) -> "Account":
-        now = datetime.now(timezone.utc)
         account = cls(
-            id=uuid4(),
             first_name=first_name,
             last_name=last_name,
             birth_date=birth_date,
             status=AccountStatus.ACTIVE,
-            created_at=now,
-            updated_at=now,
         )
         from src.domains.accounts.events import AccountCreated
         account.register_event(AccountCreated(account_id=account.id))
