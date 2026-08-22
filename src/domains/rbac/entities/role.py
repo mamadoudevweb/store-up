@@ -15,7 +15,12 @@ class Role(Entity):
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
+    # create method missing
+    
     def update(self, description: str | None = None) -> None:
         if description is not None:
             self.description = description
         self.updated_at = datetime.now(timezone.utc)
+        # should register RoleUpdated event
+
+    # delete method missing
