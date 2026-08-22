@@ -29,7 +29,7 @@ class Permission(Entity):
             PermissionCreated(
                 permission_id=permission.id,
                 resource=permission.resource,
-                action=Permission.action
+                action=permission.action
             )
         )
 
