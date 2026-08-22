@@ -19,7 +19,7 @@ class Account(Entity[UUID]):
     last_name: str
     birth_date: date | None
     status: AccountStatus
-
+    
     @classmethod
     def create(
         cls,
@@ -27,15 +27,11 @@ class Account(Entity[UUID]):
         last_name: str,
         birth_date: date | None = None,
     ) -> "Account":
-        now = datetime.now(timezone.utc)
         account = cls(
-            id=uuid4(),
             first_name=first_name,
             last_name=last_name,
             birth_date=birth_date,
             status=AccountStatus.ACTIVE,
-            created_at=now,
-            updated_at=now,
         )
         from src.domains.accounts.events import AccountCreated
         assert account.id is not None

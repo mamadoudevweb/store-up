@@ -14,6 +14,18 @@ class RoleCreated(DomainEvent):
 
 
 @dataclass(kw_only=True, frozen=True)
+class RoleUpdated(DomainEvent):
+    role_id: UUID
+    description: str
+
+
+@dataclass(kw_only=True, frozen=True)
+class RoleDeleted(DomainEvent):
+    role_id: UUID
+    name: str
+
+
+@dataclass(kw_only=True, frozen=True)
 class PermissionCreated(DomainEvent):
     permission_id: UUID
     resource: str

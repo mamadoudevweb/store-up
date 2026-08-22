@@ -1,6 +1,8 @@
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Generic, TypeVar
+
 from src.core.entities.events import DomainEvent
 
 ID = TypeVar("ID")
