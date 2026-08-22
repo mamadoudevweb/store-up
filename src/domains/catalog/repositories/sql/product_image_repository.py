@@ -30,7 +30,9 @@ class SqlProductImageRepository(BaseSqlRepository[ProductImage, ProductImageFilt
         return q
 
     def exists(self, **kwargs: Any) -> bool:
-        entity_filter = kwargs.get("entity_filter") or ProductImageFilter(**kwargs)
+        entity_filter = kwargs.pop("entity_filter", None)
+        if entity_filter is None:
+            entity_filter = ProductImageFilter(**kwargs)
         sub = select(ProductImageModel)
         sub = self._apply_filter(sub, entity_filter)
         stmt = select(sql_exists(sub.subquery()))

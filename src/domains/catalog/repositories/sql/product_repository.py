@@ -38,7 +38,9 @@ class SqlProductRepository(BaseSqlRepository[Product, ProductFilter]):
         return q
 
     def exists(self, **kwargs: Any) -> bool:
-        entity_filter = kwargs.get("entity_filter") or ProductFilter(**kwargs)
+        entity_filter = kwargs.pop("entity_filter", None)
+        if entity_filter is None:
+            entity_filter = ProductFilter(**kwargs)
         sub = select(ProductModel)
         sub = self._apply_filter(sub, entity_filter)
         stmt = select(sql_exists(sub.subquery()))
