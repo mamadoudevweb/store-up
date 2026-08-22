@@ -91,6 +91,7 @@ class ProductService(BaseService):
             product.category_id = category_id
             product.brand_id = brand_id
             product.is_active = is_active
+            product.updated_at = datetime.now(timezone.utc)
             product = uow.products.update(product)
         return ServiceResult(data=product)
 
