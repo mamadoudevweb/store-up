@@ -18,8 +18,22 @@ class Permission(Entity):
     
     @classmethod
     def create(cls, resource: str, action: str, description: str) -> "Permission":
-        ...
-        # :TODO: implement later
+        permission = cls(
+            resource=resource,
+            action=action,
+            description=description
+        )
+
+        from src.domains.rbac.events import PermissionCreated
+        permission.register_event(
+            PermissionCreated(
+                permission_id=permission.id,
+                resource=permission.resource,
+                action=Permission.action
+            )
+        )
+
+        return permission
 
     # Permission can't be updated or deleted and is created at application boot time
     
