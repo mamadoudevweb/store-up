@@ -20,12 +20,14 @@ class Permission(Entity[UUID]):
     @classmethod
     def create(cls, resource: str, action: str, description: str) -> "Permission":
         permission = cls(
+            id=uuid.uuid4(),
             resource=resource,
             action=action,
             description=description
         )
 
         from src.domains.rbac.events import PermissionCreated
+        assert permission.id is not None
         permission.register_event(
             PermissionCreated(
                 permission_id=permission.id,

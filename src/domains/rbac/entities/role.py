@@ -19,9 +19,10 @@ class Role(Entity[UUID]):
 
     @classmethod
     def create(cls, name: str, description: str) -> "Role":
-        role = cls(name=name, description=description)
+        role = cls(id=uuid.uuid4(), name=name, description=description)
 
         from src.domains.rbac.events import RoleCreated
+        assert role.id is not None
         role.register_event(
             RoleCreated(
                 role_id=role.id,
@@ -38,13 +39,15 @@ class Role(Entity[UUID]):
         self.updated_at = datetime.now(timezone.utc)
 
         from src.domains.rbac.events import RoleUpdated
+        assert self.id is not None
         self.register_event(
             RoleUpdated(
                 role_id=self.id,
-                description=self.description
+                description=self.description or ""
             )
         )
 
     def mark_deleted(self) -> None:
         from src.domains.rbac.events import RoleDeleted
-        self.register_event(RoleDeleted(role_id=self.id))
+        assert self.id is not None
+        self.register_event(RoleDeleted(role_id=self.id, name=self.name))

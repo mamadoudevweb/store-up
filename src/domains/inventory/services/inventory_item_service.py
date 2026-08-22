@@ -17,22 +17,22 @@ from src.domains.inventory.repositories.filters import InventoryItemFilter
 
 
 class InventoryItemService(BaseService):
-    def get_inventory_item(self, account: SupportsPermissionCheck, criteria: EntityId | InventoryItemFilter) -> ServiceResult[InventoryItem]:
-        self._authorize(account, "inventory", "inventory_item", "read")
+    def get_inventory_item(self, actor: SupportsPermissionCheck, criteria: EntityId | InventoryItemFilter) -> ServiceResult[InventoryItem]:
+        self._authorize(actor, "inventory", "inventory_item", "read")
         with self._uow_factory() as uow:
             item = uow.inventory_items.get(criteria)
         if item is None:
             raise InventoryItemNotFound(criteria=criteria)
         return ServiceResult(data=item)
 
-    def list_inventory_items(self, account: SupportsPermissionCheck, filter_: InventoryItemFilter) -> ServiceResult[Pagination[InventoryItem]]:
-        self._authorize(account, "inventory", "inventory_item", "read")
+    def list_inventory_items(self, actor: SupportsPermissionCheck, filter_: InventoryItemFilter) -> ServiceResult[Pagination[InventoryItem]]:
+        self._authorize(actor, "inventory", "inventory_item", "read")
         with self._uow_factory() as uow:
             page = uow.inventory_items.list(filter_)
         return ServiceResult(data=page)
 
-    def set_low_stock_threshold(self, account: SupportsPermissionCheck, product_id: uuid.UUID, threshold: int) -> ServiceResult[InventoryItem]:
-        self._authorize(account, "inventory", "inventory_item", "update")
+    def set_low_stock_threshold(self, actor: SupportsPermissionCheck, product_id: uuid.UUID, threshold: int) -> ServiceResult[InventoryItem]:
+        self._authorize(actor, "inventory", "inventory_item", "update")
         with self._uow_factory() as uow:
             item = uow.inventory_items.get(InventoryItemFilter(product_id=product_id))
             if not item:
@@ -45,13 +45,13 @@ class InventoryItemService(BaseService):
 
     def adjust_stock(
         self,
-        account: SupportsPermissionCheck,
+        actor: SupportsPermissionCheck,
         product_id: uuid.UUID,
         quantity_change: int,
         reason: str,
         reference_id: str | None = None,
     ) -> ServiceResult[InventoryItem]:
-        self._authorize(account, "inventory", "inventory_item", "update")
+        self._authorize(actor, "inventory", "inventory_item", "update")
         with self._uow_factory() as uow:
             item = uow.inventory_items.get(InventoryItemFilter(product_id=product_id))
             if not item:
@@ -78,9 +78,9 @@ class InventoryItemService(BaseService):
         return ServiceResult(data=item)
 
     def reserve_stock(
-        self, account: SupportsPermissionCheck, product_id: uuid.UUID, quantity: int, reference_id: str | None = None
+        self, actor: SupportsPermissionCheck, product_id: uuid.UUID, quantity: int, reference_id: str | None = None
     ) -> ServiceResult[InventoryItem]:
-        self._authorize(account, "inventory", "inventory_item", "update")
+        self._authorize(actor, "inventory", "inventory_item", "update")
         with self._uow_factory() as uow:
             item = uow.inventory_items.get(InventoryItemFilter(product_id=product_id))
             if not item:
@@ -96,9 +96,9 @@ class InventoryItemService(BaseService):
         return ServiceResult(data=item)
 
     def release_stock(
-        self, account: SupportsPermissionCheck, product_id: uuid.UUID, quantity: int, reference_id: str | None = None
+        self, actor: SupportsPermissionCheck, product_id: uuid.UUID, quantity: int, reference_id: str | None = None
     ) -> ServiceResult[InventoryItem]:
-        self._authorize(account, "inventory", "inventory_item", "update")
+        self._authorize(actor, "inventory", "inventory_item", "update")
         with self._uow_factory() as uow:
             item = uow.inventory_items.get(InventoryItemFilter(product_id=product_id))
             if not item:
@@ -114,9 +114,9 @@ class InventoryItemService(BaseService):
         return ServiceResult(data=item)
 
     def ship_stock(
-        self, account: SupportsPermissionCheck, product_id: uuid.UUID, quantity: int, reference_id: str | None = None
+        self, actor: SupportsPermissionCheck, product_id: uuid.UUID, quantity: int, reference_id: str | None = None
     ) -> ServiceResult[InventoryItem]:
-        self._authorize(account, "inventory", "inventory_item", "update")
+        self._authorize(actor, "inventory", "inventory_item", "update")
         with self._uow_factory() as uow:
             item = uow.inventory_items.get(InventoryItemFilter(product_id=product_id))
             if not item:

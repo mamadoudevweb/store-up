@@ -13,12 +13,13 @@ class RolePermission(Entity[UUID]):
     role_id: uuid.UUID
     permission_id: uuid.UUID
     assigned_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    revoked_at: datetime = field(default_factory=lambda: datetime.now(timezon.utc))
+    revoked_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     
     @classmethod
     def assign_permission(cls, role_id: uuid.UUID, permission_id: uuid.UUID) -> "RolePermission":
         role_permission = cls(
+            id=uuid.uuid4(),
             role_id=role_id,
             permission_id=permission_id
         )

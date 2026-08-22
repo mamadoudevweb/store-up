@@ -13,16 +13,16 @@ from src.domains.inventory.repositories.filters import StockMovementFilter
 
 
 class StockMovementService(BaseService):
-    def get_movement(self, account: SupportsPermissionCheck, criteria: EntityId | StockMovementFilter) -> ServiceResult[StockMovement]:
-        self._authorize(account, "inventory", "stock_movement", "read")
+    def get_movement(self, actor: SupportsPermissionCheck, criteria: EntityId | StockMovementFilter) -> ServiceResult[StockMovement]:
+        self._authorize(actor, "inventory", "stock_movement", "read")
         with self._uow_factory() as uow:
             movement = uow.stock_movements.get(criteria)
         if movement is None:
             raise StockMovementNotFound(criteria=criteria)
         return ServiceResult(data=movement)
 
-    def list_movements(self, account: SupportsPermissionCheck, filter_: StockMovementFilter) -> ServiceResult[Pagination[StockMovement]]:
-        self._authorize(account, "inventory", "stock_movement", "read")
+    def list_movements(self, actor: SupportsPermissionCheck, filter_: StockMovementFilter) -> ServiceResult[Pagination[StockMovement]]:
+        self._authorize(actor, "inventory", "stock_movement", "read")
         with self._uow_factory() as uow:
             page = uow.stock_movements.list(filter_)
         return ServiceResult(data=page)

@@ -28,6 +28,7 @@ class Account(Entity[UUID]):
         birth_date: date | None = None,
     ) -> "Account":
         account = cls(
+            id=uuid4(),
             first_name=first_name,
             last_name=last_name,
             birth_date=birth_date,
