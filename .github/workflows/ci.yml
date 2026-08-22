@@ -13,7 +13,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:18
         env:
           POSTGRES_USER: store_up
           POSTGRES_PASSWORD: store_up
@@ -38,7 +38,7 @@ jobs:
 
     env:
       FLASK_ENV: testing
-      DATABASE_URL: sqlite:///:memory:
+      DATABASE_URL: postgresql://store_up:store_up@localhost:5432/store_up_test
       REDIS_URL: redis://localhost:6379/0
       SECRET_KEY: ci-secret-key
       JWT_ACCESS_TOKEN_EXPIRES: 3600
