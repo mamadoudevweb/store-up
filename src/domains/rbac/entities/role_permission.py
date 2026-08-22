@@ -25,8 +25,8 @@ class RolePermission(Entity):
         from src.domains.rbac.events import RolePermissionAssigned
         role_permission.register_event(
             RolePermissionAssigned(
-                role_id=role_id,
-                permission_id=permission_id
+                role_id=role_permission.role_id,
+                permission_id=role_permission.permission_id
             )
         )
 
