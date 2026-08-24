@@ -38,7 +38,7 @@ class BaseConfig(BaseSettings):
     RATE_LIMIT_STORAGE_URL: str = "redis://localhost:6379/1"
 
     # ── CORS / Domain Restriction ──────────────────────────────────────────
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
+    ALLOWED_ORIGINS: str | list[str] = ["http://localhost:3000"]
 
     # ── File Uploads ───────────────────────────────────────────────────────
     UPLOAD_FOLDER: str = "uploads"
@@ -52,9 +52,10 @@ class BaseConfig(BaseSettings):
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
-    def parse_origins(cls, v: str | list[str]) -> list[str]:
+    def parse_origins(cls, v: str | list[str]) -> str | list[str]:
         if isinstance(v, str):
-            return [o.strip() for o in v.split(",")]
+            if "," in v:
+                return [o.strip() for o in v.split(",")]
         return v
 
     def to_flask_config(self) -> dict[str, object]:
