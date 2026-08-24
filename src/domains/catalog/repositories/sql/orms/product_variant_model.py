@@ -1,22 +1,25 @@
-"""Product SQLAlchemy model."""
+"""ProductVariant SQLAlchemy model."""
 from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Text, func
+from sqlalchemy import ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.app.extensions import db
 
 
-class ProductModel(db.Model):  # type: ignore[name-defined]
-    __tablename__ = "products"
+class ProductVariantModel(db.Model):  # type: ignore[name-defined]
+    __tablename__ = "product_variants"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    brand_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True, index=True)
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    sku: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    cost_price: Mapped[int] = mapped_column(Integer, nullable=False)  # cents
+    sell_price: Mapped[int] = mapped_column(Integer, nullable=False)  # cents
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft", index=True)
 
     created_at: Mapped[datetime] = mapped_column(

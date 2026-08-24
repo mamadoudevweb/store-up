@@ -5,7 +5,7 @@ They subclass the appropriate generic error from core for correct HTTP semantics
 """
 from __future__ import annotations
 
-from src.core.services.errors import ConflictError, NotFoundError
+from src.core.services.errors import ConflictError, NotFoundError, ValidationError
 
 
 class ProductNotFound(NotFoundError):
@@ -31,3 +31,28 @@ class CategoryNotFound(NotFoundError):
 class ProductImageNotFound(NotFoundError):
     code = "CATALOG_PRODUCT_IMAGE_NOT_FOUND"
     message = "Product image not found"
+
+
+class ProductVariantNotFound(NotFoundError):
+    code = "CATALOG_PRODUCT_VARIANT_NOT_FOUND"
+    message = "Product variant not found"
+
+
+class LastVariantError(ValidationError):
+    code = "CATALOG_LAST_VARIANT"
+    message = "Cannot delete the last variant of a product — delete the product instead"
+
+
+class ProductCategoryNotFound(NotFoundError):
+    code = "CATALOG_PRODUCT_CATEGORY_NOT_FOUND"
+    message = "Product is not assigned to that category"
+
+
+class AttributeNotFound(NotFoundError):
+    code = "CATALOG_ATTRIBUTE_NOT_FOUND"
+    message = "Attribute not found"
+
+
+class AttributeValueNotFound(NotFoundError):
+    code = "CATALOG_ATTRIBUTE_VALUE_NOT_FOUND"
+    message = "Attribute value not found"

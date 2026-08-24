@@ -1,17 +1,16 @@
-"""Product service."""
+"""Product service — manages the conceptual product (no pricing/SKU here)."""
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
 from typing import Callable
 
 from src.core.repositories.base_uow import BaseUnitOfWork
 from src.core.services.base_service import BaseService, SupportsPermissionCheck
 from src.core.services.result import ServiceResult
 from src.core.entities.pagination import Pagination
-from src.domains.catalog.entities import Product
-from src.domains.catalog.exceptions import DuplicateSkuError, ProductNotFound
-from src.domains.catalog.repositories.filters import ProductFilter
+from src.domains.catalog.entities import Product, ProductStatus
+from src.domains.catalog.exceptions import ProductNotFound
+from src.domains.catalog.repositories.filters import ProductFilter, ProductVariantFilter
 
 
 class ProductService(BaseService):
@@ -21,30 +20,34 @@ class ProductService(BaseService):
     def create_product(
         self,
         actor: SupportsPermissionCheck,
-        sku: str,
         name: str,
+        sku: str,
         cost_price: int,
         sell_price: int,
         description: str | None = None,
-        category_id: uuid.UUID | None = None,
         brand_id: uuid.UUID | None = None,
     ) -> ServiceResult[Product]:
+        """Create a Product and its mandatory first Variant atomically."""
+        from src.domains.catalog.entities import ProductVariant
         self._authorize(actor, "catalog", "product", "create")
         with self._uow_factory() as uow:
-            if uow.products.exists(ProductFilter(sku=sku)):
-                raise DuplicateSkuError(sku=sku)
-            product = Product(
-                id=uuid.uuid4(),
-                sku=sku,
-                name=name,
-                cost_price=cost_price,
-                sell_price=sell_price,
-                description=description,
-                category_id=category_id,
-                brand_id=brand_id,
-            )
+            product = Product.create(name=name, description=description, brand_id=brand_id)
             product = uow.products.add(product)
             uow.track(product)
+
+            assert product.id is not None
+            # First variant is always created alongside the product
+            if uow.product_variants.exists(ProductVariantFilter(sku=sku)):
+                from src.domains.catalog.exceptions import DuplicateSkuError
+                raise DuplicateSkuError(sku=sku)
+            variant = ProductVariant.create(
+                product_id=product.id,
+                sku=sku,
+                cost_price=cost_price,
+                sell_price=sell_price,
+            )
+            uow.product_variants.add(variant)
+            uow.track(variant)
         return ServiceResult(data=product)
 
     def get_product(
@@ -52,7 +55,7 @@ class ProductService(BaseService):
     ) -> ServiceResult[Product]:
         self._authorize(actor, "catalog", "product", "read")
         with self._uow_factory() as uow:
-            product = uow.products.get(ProductFilter(id=product_id, is_active=True))
+            product = uow.products.get(ProductFilter(id=product_id))
         if product is None:
             raise ProductNotFound()
         return ServiceResult(data=product)
@@ -69,39 +72,54 @@ class ProductService(BaseService):
         self,
         actor: SupportsPermissionCheck,
         product_id: uuid.UUID,
-        sku: str,
-        name: str,
-        cost_price: int,
-        sell_price: int,
+        name: str | None = None,
         description: str | None = None,
-        category_id: uuid.UUID | None = None,
         brand_id: uuid.UUID | None = None,
-        is_active: bool = True,
     ) -> ServiceResult[Product]:
         self._authorize(actor, "catalog", "product", "update")
         with self._uow_factory() as uow:
-            product = uow.products.get(ProductFilter(id=product_id, is_active=True))
+            product = uow.products.get(ProductFilter(id=product_id))
             if product is None:
                 raise ProductNotFound()
-            product.sku = sku
-            product.name = name
-            product.cost_price = cost_price
-            product.sell_price = sell_price
-            product.description = description
-            product.category_id = category_id
-            product.brand_id = brand_id
-            product.is_active = is_active
+            product.update(name=name, description=description, brand_id=brand_id)
             product = uow.products.update(product)
+            uow.track(product)
+        return ServiceResult(data=product)
+
+    def change_status(
+        self,
+        actor: SupportsPermissionCheck,
+        product_id: uuid.UUID,
+        new_status: ProductStatus,
+    ) -> ServiceResult[Product]:
+        self._authorize(actor, "catalog", "product", "update")
+        with self._uow_factory() as uow:
+            product = uow.products.get(ProductFilter(id=product_id))
+            if product is None:
+                raise ProductNotFound()
+            product.change_status(new_status)
+            product = uow.products.update(product)
+            uow.track(product)
         return ServiceResult(data=product)
 
     def delete_product(
         self, actor: SupportsPermissionCheck, product_id: uuid.UUID
     ) -> ServiceResult[None]:
+        """Soft-delete: archives the product (and all its variants via service)."""
         self._authorize(actor, "catalog", "product", "delete")
         with self._uow_factory() as uow:
-            product = uow.products.get(ProductFilter(id=product_id, is_active=True))
+            product = uow.products.get(ProductFilter(id=product_id))
             if product is None:
                 raise ProductNotFound()
-            product.is_active = False
+            product.mark_deleted()
             uow.products.update(product)
+            uow.track(product)
+            # Archive all variants
+            variants = uow.product_variants.list(
+                ProductVariantFilter(product_id=product_id)
+            ).items
+            for v in variants:
+                v.mark_deleted()
+                uow.product_variants.update(v)
+                uow.track(v)
         return ServiceResult(data=None)

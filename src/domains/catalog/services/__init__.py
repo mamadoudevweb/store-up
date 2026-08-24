@@ -5,10 +5,13 @@ from typing import Callable
 
 from src.core.repositories.base_uow import BaseUnitOfWork
 
+from .attribute import AttributeService
 from .brand import BrandService
 from .category import CategoryService
 from .product import ProductService
+from .product_category import ProductCategoryService
 from .product_image import ProductImageService
+from .product_variant import ProductVariantService
 
 
 class CatalogDomainService:
@@ -19,6 +22,9 @@ class CatalogDomainService:
 
     def __init__(self, uow_factory: Callable[[], BaseUnitOfWork], upload_folder: str) -> None:
         self.product = ProductService(uow_factory)
+        self.variant = ProductVariantService(uow_factory)
+        self.product_category = ProductCategoryService(uow_factory)
         self.brand = BrandService(uow_factory, upload_folder)
         self.category = CategoryService(uow_factory)
         self.product_image = ProductImageService(uow_factory, upload_folder)
+        self.attribute = AttributeService(uow_factory)

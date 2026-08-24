@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import exists as sql_exists, select
-
 from src.core.repositories.sql.base_sql_repository import BaseSqlRepository
 from src.domains.catalog.entities import ProductImage
 from src.domains.catalog.repositories.filters import ProductImageFilter
@@ -21,12 +19,8 @@ class SqlProductImageRepository(BaseSqlRepository[ProductImage, ProductImageFilt
         q = query
         if entity_filter.id:
             q = q.where(ProductImageModel.id == entity_filter.id)
-        if entity_filter.product_id:
-            q = q.where(ProductImageModel.product_id == entity_filter.product_id)
-        if entity_filter.is_primary is not None:
-            q = q.where(ProductImageModel.is_primary == entity_filter.is_primary)
-        # Always order by sort_order for predictable image ordering
-        q = q.order_by(ProductImageModel.sort_order)
+        if entity_filter.variant_id:
+            q = q.where(ProductImageModel.variant_id == entity_filter.variant_id)
+        # Always order by `order` so lowest = primary/cover image
+        q = q.order_by(ProductImageModel.order)
         return q
-
-

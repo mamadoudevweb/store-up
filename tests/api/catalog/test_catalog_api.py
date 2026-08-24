@@ -24,7 +24,7 @@ def catalog_superuser_headers(app):
         domain_service.accounts.account_role.assign_role(mock_actor, acc.id, role_res.id)
         
         # Grant permissions for catalog
-        for entity in ["brand", "category", "product", "product_image"]:
+        for entity in ["brand", "category", "product", "product_image", "product_variant", "product_category", "attribute"]:
             for action in ["create", "read", "update", "delete", "list"]:
                 resource_name = f"catalog:{entity}"
                 from src.domains.rbac.exceptions import PermissionAlreadyExists
@@ -140,17 +140,22 @@ def test_product_api(client, catalog_superuser_headers):
     cat_res = client.post("/api/v1/categories", headers=catalog_superuser_headers, json={"name": "Laptops"})
     cat_id = cat_res.get_json()["data"]["id"]
 
-    # Create Product
+    # Create Product (creates first variant too)
     res = client.post("/api/v1/products", headers=catalog_superuser_headers, json={
-        "sku": "DELL-XPS-15",
         "name": "Dell XPS 15",
+        "sku": "DELL-XPS-15",
         "cost_price": 100000,
         "sell_price": 149999,
-        "brand_id": brand_id,
-        "category_id": cat_id
+        "brand_id": brand_id
     })
     assert res.status_code == 201
     prod_id = res.get_json()["data"]["id"]
+
+    # Assign Category
+    res = client.post(f"/api/v1/products/{prod_id}/categories", headers=catalog_superuser_headers, json={
+        "category_id": cat_id
+    })
+    assert res.status_code == 201
 
     # Get Product
     res = client.get(f"/api/v1/products/{prod_id}", headers=catalog_superuser_headers)
@@ -163,31 +168,42 @@ def test_product_api(client, catalog_superuser_headers):
 
     # Update Product
     res = client.put(f"/api/v1/products/{prod_id}", headers=catalog_superuser_headers, json={
-        "sku": "DELL-XPS-15",
-        "name": "Dell XPS 15",
-        "cost_price": 90000,
+        "name": "Dell XPS 15 Updated"
+    })
+    assert res.status_code == 200
+    assert res.get_json()["data"]["name"] == "Dell XPS 15 Updated"
+
+    # List variants to get the created variant id
+    res = client.get(f"/api/v1/variants?product_id={prod_id}", headers=catalog_superuser_headers)
+    assert res.status_code == 200
+    variants = res.get_json()["data"]
+    assert len(variants) == 1
+    variant_id = variants[0]["id"]
+
+    # Update Variant
+    res = client.put(f"/api/v1/variants/{variant_id}", headers=catalog_superuser_headers, json={
         "sell_price": 129999
     })
     assert res.status_code == 200
     assert res.get_json()["data"]["sell_price"] == 129999
 
-    # Upload Image
+    # Upload Image to variant
     data = {'file': (io.BytesIO(b"img"), 'img.png')}
-    res = client.post(f"/api/v1/products/{prod_id}/images", headers=catalog_superuser_headers, data=data, content_type='multipart/form-data')
+    res = client.post(f"/api/v1/variants/{variant_id}/images", headers=catalog_superuser_headers, data=data, content_type='multipart/form-data')
     assert res.status_code == 201
     img_id = res.get_json()["data"]["id"]
 
     # List Images
-    res = client.get(f"/api/v1/products/{prod_id}/images", headers=catalog_superuser_headers)
+    res = client.get(f"/api/v1/variants/{variant_id}/images", headers=catalog_superuser_headers)
     assert res.status_code == 200
     assert len(res.get_json()["data"]) == 1
 
     # Set Primary
-    res = client.put(f"/api/v1/products/{prod_id}/images/{img_id}/primary", headers=catalog_superuser_headers)
+    res = client.put(f"/api/v1/variants/{variant_id}/images/{img_id}/primary", headers=catalog_superuser_headers)
     assert res.status_code == 200
 
     # Delete Image
-    res = client.delete(f"/api/v1/products/{prod_id}/images/{img_id}", headers=catalog_superuser_headers)
+    res = client.delete(f"/api/v1/variants/{variant_id}/images/{img_id}", headers=catalog_superuser_headers)
     assert res.status_code == 200
 
     # Delete Product

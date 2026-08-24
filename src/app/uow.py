@@ -14,9 +14,12 @@ from src.domains.rbac.repositories.sql.permission_repository import SqlPermissio
 from src.domains.rbac.repositories.sql.role_permission_repository import SqlRolePermissionRepository
 # Catalog
 from src.domains.catalog.repositories.sql.product_repository import SqlProductRepository
+from src.domains.catalog.repositories.sql.product_variant_repository import SqlProductVariantRepository
+from src.domains.catalog.repositories.sql.product_category_repository import SqlProductCategoryRepository
 from src.domains.catalog.repositories.sql.brand_repository import SqlBrandRepository
 from src.domains.catalog.repositories.sql.category_repository import SqlCategoryRepository
 from src.domains.catalog.repositories.sql.product_image_repository import SqlProductImageRepository
+from src.domains.catalog.repositories.sql.attribute_repository import SqlAttributeRepository, SqlAttributeValueRepository
 # Inventory
 from src.domains.inventory.repositories.sql.inventory_item_repository import SqlInventoryItemRepository
 from src.domains.inventory.repositories.sql.stock_movement_repository import SqlStockMovementRepository
@@ -34,9 +37,13 @@ REPOSITORY_CLASSES: dict[str, type[Any]] = {
 
     # Catalog domain
     "products": SqlProductRepository,
+    "product_variants": SqlProductVariantRepository,
+    "product_categories": SqlProductCategoryRepository,
     "brands": SqlBrandRepository,
     "categories": SqlCategoryRepository,
     "product_images": SqlProductImageRepository,
+    "attributes": SqlAttributeRepository,
+    "attribute_values": SqlAttributeValueRepository,
 
     # Inventory domain
     "inventory_items": SqlInventoryItemRepository,

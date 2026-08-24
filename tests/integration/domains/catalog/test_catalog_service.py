@@ -108,20 +108,21 @@ def test_product_service(catalog_service, mock_actor):
     # Create product
     res = catalog_service.product.create_product(
         mock_actor,
-        sku="TV-001",
         name="Smart TV",
+        sku="TV-001",
         cost_price=40000,
         sell_price=59999,
-        brand_id=brand.id,
-        category_id=category.id
+        brand_id=brand.id
     )
     assert res.success
     product_id = res.data.id
-    assert res.data.sku == "TV-001"
+
+    # Assign category
+    catalog_service.product_category.assign_category(mock_actor, product_id, category.id)
 
     # Duplicate sku
     with pytest.raises(DuplicateSkuError):
-        catalog_service.product.create_product(mock_actor, sku="TV-001", name="Smart TV 2", cost_price=100, sell_price=200, brand_id=brand.id, category_id=category.id)
+        catalog_service.product.create_product(mock_actor, name="Smart TV 2", sku="TV-001", cost_price=100, sell_price=200, brand_id=brand.id)
 
     # Get product
     res = catalog_service.product.get_product(mock_actor, product_id)
@@ -131,49 +132,62 @@ def test_product_service(catalog_service, mock_actor):
         catalog_service.product.get_product(mock_actor, uuid.uuid4())
 
     # Update product
-    res = catalog_service.product.update_product(mock_actor, product_id, sku="TV-001", name="Smart TV", cost_price=30000, sell_price=49999)
-    assert res.data.sell_price == 49999
+    res = catalog_service.product.update_product(mock_actor, product_id, name="Smart TV Updated")
+    assert res.data.name == "Smart TV Updated"
 
     # List products
-    from src.domains.catalog.repositories.filters import ProductFilter
+    from src.domains.catalog.repositories.filters import ProductFilter, ProductVariantFilter
     res = catalog_service.product.list_products(mock_actor, ProductFilter())
     assert len(res.data.items) >= 1
 
-    # Product Images
+    # Get variant
+    variants = catalog_service.variant.list_variants(mock_actor, ProductVariantFilter(product_id=product_id)).data.items
+    assert len(variants) == 1
+    variant_id = variants[0].id
+
+    # Update variant
+    res = catalog_service.variant.update_variant(mock_actor, variant_id, sell_price=49999)
+    assert res.data.sell_price == 49999
+
+    # Product Images (now under variant)
     fake_img = io.BytesIO(b"img data")
     fake_img.filename = "tv.jpg"
     fake_img.content_type = "image/jpeg"
 
     # Upload image
-    img_res = catalog_service.product_image.upload_image(mock_actor, product_id, fake_img.filename, fake_img, is_primary=True)
+    img_res = catalog_service.product_image.upload_image(mock_actor, variant_id, fake_img.filename, fake_img, order=0)
     assert img_res.success
     img_id = img_res.data.id
 
     # List images
-    imgs = catalog_service.product_image.list_images(mock_actor, product_id).data
+    imgs = catalog_service.product_image.list_images(mock_actor, variant_id).data
     assert len(imgs.items) == 1
-    assert imgs.items[0].is_primary is True
+    assert imgs.items[0].order == 0
 
     # Upload second image
     fake_img2 = io.BytesIO(b"img2 data")
     fake_img2.filename = "tv2.jpg"
     fake_img2.content_type = "image/jpeg"
-    img_res2 = catalog_service.product_image.upload_image(mock_actor, product_id, fake_img2.filename, fake_img2, is_primary=False)
+    img_res2 = catalog_service.product_image.upload_image(mock_actor, variant_id, fake_img2.filename, fake_img2, order=1)
 
     # Set primary
-    catalog_service.product_image.set_primary(mock_actor, product_id, img_res2.data.id)
-    imgs = catalog_service.product_image.list_images(mock_actor, product_id).data
-    assert imgs.items[1].is_primary is True
+    catalog_service.product_image.set_primary(mock_actor, variant_id, img_res2.data.id)
+    imgs = catalog_service.product_image.list_images(mock_actor, variant_id).data
+    # Re-fetch both since order was shifted
+    for img in imgs.items:
+        if img.id == img_res2.data.id:
+            assert img.order == 0
 
     # Delete image
-    catalog_service.product_image.delete_image(mock_actor, product_id, img_id)
-    imgs_after = catalog_service.product_image.list_images(mock_actor, product_id).data
+    catalog_service.product_image.delete_image(mock_actor, variant_id, img_id)
+    imgs_after = catalog_service.product_image.list_images(mock_actor, variant_id).data
     assert len(imgs_after.items) == 1
 
     with pytest.raises(ProductImageNotFound):
-        catalog_service.product_image.delete_image(mock_actor, product_id, img_id)
+        catalog_service.product_image.delete_image(mock_actor, variant_id, img_id)
 
     # Delete product
     catalog_service.product.delete_product(mock_actor, product_id)
-    with pytest.raises(ProductNotFound):
-        catalog_service.product.get_product(mock_actor, product_id)
+    archived_product = catalog_service.product.get_product(mock_actor, product_id).data
+    from src.domains.catalog.entities import ProductStatus
+    assert archived_product.status == ProductStatus.ARCHIVED
