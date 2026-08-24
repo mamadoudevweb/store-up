@@ -28,6 +28,21 @@ class Refund(BaseEntity[uuid.UUID]):
         reason: str,
         lines: list[RefundLine],
     ) -> Refund:
+        """
+        Create a pending refund for a sale and associate the provided refund lines.
+        
+        Parameters:
+            sale_id (uuid.UUID): Identifier of the sale being refunded.
+            processed_by (uuid.UUID): Identifier of the processor handling the refund.
+            reason (str): Explanation for the refund.
+            lines (list[RefundLine]): Refund lines included in the refund.
+        
+        Returns:
+            Refund: The newly created pending refund.
+        
+        Raises:
+            ValueError: If no refund lines are provided.
+        """
         from datetime import timezone
         
         if not lines:
@@ -50,11 +65,22 @@ class Refund(BaseEntity[uuid.UUID]):
         return refund
 
     def mark_processed(self) -> None:
+        """Mark the refund as processed.
+        
+        Raises:
+            ValueError: If the refund is not pending.
+        """
         if self.status != RefundStatus.PENDING:
             raise ValueError(f"Cannot process refund in {self.status.value} state")
         self.status = RefundStatus.PROCESSED
 
     def mark_failed(self) -> None:
+        """
+        Mark the refund as failed.
+        
+        Raises:
+        	ValueError: If the refund is not pending.
+        """
         if self.status != RefundStatus.PENDING:
             raise ValueError(f"Cannot fail refund in {self.status.value} state")
         self.status = RefundStatus.FAILED

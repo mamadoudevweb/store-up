@@ -4,6 +4,7 @@ from src.domains.sale.routes.v1.schemas.sale_schemas import (
 )
 
 def register() -> None:
+    """Register sales checkout, completion, and failure endpoints in the OpenAPI specification."""
     spec.path(
         path="/api/v1/sales/checkout",
         operations={

@@ -19,8 +19,20 @@ class SaleService(BaseService):
         discount: int = 0,
     ) -> ServiceResult[Sale]:
         """
-        Initiates a sale transaction.
-        Reserves stock synchronously and creates a Sale in PENDING state.
+        Create a pending sale after reserving stock for all requested line items.
+        
+        Parameters:
+        	seller_account_id (uuid.UUID): Account receiving credit for the sale.
+        	payment_method_id (uuid.UUID): Payment method used for the sale.
+        	lines_data (list[dict[str, typing.Any]]): Sale lines containing variant IDs, quantities, unit prices, and optional line discounts.
+        	customer_name (str | None): Optional customer name associated with the sale.
+        	discount (int): Overall sale discount.
+        
+        Returns:
+        	ServiceResult[Sale]: The newly created pending sale.
+        
+        Raises:
+        	InsufficientStockError: If the requested quantity is unavailable for any line.
         """
         self._authorize(account, "sale", "sale", "create")
         
@@ -65,7 +77,18 @@ class SaleService(BaseService):
             return ServiceResult(data=sale)
 
     def complete_sale(self, account: SupportsPermissionCheck, sale_id: uuid.UUID) -> ServiceResult[Sale]:
-        """Called by event handler when payment is successful."""
+        """
+        Mark a sale as completed.
+        
+        Parameters:
+        	sale_id (uuid.UUID): Identifier of the sale to complete.
+        
+        Returns:
+        	ServiceResult[Sale]: The completed sale.
+        
+        Raises:
+        	SaleNotFoundError: If the sale does not exist.
+        """
         self._authorize(account, "sale", "sale", "update")
         with self._uow_factory() as uow:
             sale = getattr(uow, "sales").get(sale_id)
@@ -79,7 +102,19 @@ class SaleService(BaseService):
             return ServiceResult(data=sale)
 
     def fail_sale(self, account: SupportsPermissionCheck, sale_id: uuid.UUID, reason: str) -> ServiceResult[Sale]:
-        """Called by event handler when payment fails. Releases stock."""
+        """
+        Marks a sale as failed and releases its reserved stock.
+        
+        Parameters:
+        	sale_id (uuid.UUID): Identifier of the sale to fail.
+        	reason (str): Explanation for the sale failure.
+        
+        Raises:
+        	SaleNotFoundError: If the sale does not exist.
+        
+        Returns:
+        	ServiceResult[Sale]: The failed sale.
+        """
         self._authorize(account, "sale", "sale", "update")
         with self._uow_factory() as uow:
             sale = getattr(uow, "sales").get(sale_id)
@@ -97,7 +132,22 @@ class SaleService(BaseService):
             return ServiceResult(data=sale)
 
     def process_refund(self, account: SupportsPermissionCheck, sale_id: uuid.UUID, refund_id: uuid.UUID, lines_data: list[dict[str, typing.Any]], amount: int) -> ServiceResult[Sale]:
-        """Called by event handler when a refund is requested. Mutates sale state and emits SaleReturned."""
+        """
+        Process a refund for a sale and update the refunded quantities of its sale lines.
+        
+        Parameters:
+            account (SupportsPermissionCheck): Account requesting the refund.
+            sale_id (uuid.UUID): Identifier of the sale to refund.
+            refund_id (uuid.UUID): Identifier of the refund.
+            lines_data (list[dict[str, typing.Any]]): Sale line identifiers and quantities to refund.
+            amount (int): Refund amount.
+        
+        Returns:
+            ServiceResult[Sale]: The updated sale.
+        
+        Raises:
+            SaleNotFoundError: If the sale does not exist.
+        """
         self._authorize(account, "sale", "sale", "update")
         with self._uow_factory() as uow:
             sale = getattr(uow, "sales").get(sale_id)

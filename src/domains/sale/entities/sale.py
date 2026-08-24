@@ -38,6 +38,21 @@ class Sale(BaseEntity[uuid.UUID]):
         discount: int = 0,
         number: str | None = None,
     ) -> Sale:
+        """
+        Create a pending sale from one or more sale lines.
+        
+        Parameters:
+            lines (list[SaleLine]): The items included in the sale.
+            discount (int): The order-level discount applied to the subtotal.
+            number (str | None): An optional sale number; one is generated when omitted.
+            customer_name (str | None): The customer's name, when available.
+        
+        Returns:
+            Sale: The newly created pending sale.
+        
+        Raises:
+            ValueError: If no lines are provided, the discount is negative, or the total is negative.
+        """
         from datetime import timezone
         
         if not lines:
@@ -86,6 +101,12 @@ class Sale(BaseEntity[uuid.UUID]):
         return sale
 
     def mark_completed(self) -> None:
+        """
+        Mark the sale as completed.
+        
+        Raises:
+        	InvalidSaleStateError: If the sale is not pending.
+        """
         if self.status != SaleStatus.PENDING:
             raise InvalidSaleStateError("Only pending sales can be completed")
         
@@ -94,6 +115,12 @@ class Sale(BaseEntity[uuid.UUID]):
         self.register_event(SaleCompleted(sale_id=self.id))
 
     def mark_failed(self, reason: str) -> None:
+        """
+        Mark the sale as failed.
+        
+        Parameters:
+            reason (str): Explanation for the failure.
+        """
         if self.status != SaleStatus.PENDING:
             raise InvalidSaleStateError("Only pending sales can be failed")
             
@@ -104,6 +131,16 @@ class Sale(BaseEntity[uuid.UUID]):
         self.register_event(SaleFailed(sale_id=self.id))
 
     def process_refund(self, refund_id: uuid.UUID, amount: int) -> None:
+        """
+        Process a refund for a completed sale and mark it as returned.
+        
+        Parameters:
+        	refund_id (uuid.UUID): Identifier of the refund.
+        	amount (int): Refund amount.
+        
+        Raises:
+        	InvalidSaleStateError: If the sale is neither completed nor already returned.
+        """
         if self.status not in (SaleStatus.COMPLETED, SaleStatus.RETURNED):
             raise InvalidSaleStateError("Sale must be completed to process a refund")
             

@@ -20,10 +20,32 @@ class SqlRefundRepository(BaseSqlRepository[Refund, RefundFilters]):
         self.filter_cls = RefundFilters
 
     def _apply_filter(self, query: Select[Any], entity_filter: RefundFilters) -> Select[Any]:
+        """Apply refund-specific filtering to a SQL query.
+        
+        Parameters:
+        	entity_filter (RefundFilters): Filters used to constrain the query.
+        
+        Returns:
+        	Select[Any]: The filtered SQL query.
+        """
         return entity_filter.apply(query)
 
     def _apply_default_load_options(self, stmt: Select[tuple[Any, ...]]) -> Select[tuple[Any, ...]]:
+        """
+        Configure the query to eagerly load the refund's lines.
+        
+        Returns:
+            Select[tuple[Any, ...]]: The query with refund lines configured for eager loading.
+        """
         return stmt.options(joinedload(RefundModel.lines))
 
     def _get_entity_id(self, entity: Refund) -> uuid.UUID:
+        """Return the UUID identifier of a refund entity.
+        
+        Parameters:
+            entity (Refund): The refund whose identifier is retrieved.
+        
+        Returns:
+            uuid.UUID: The refund entity's UUID identifier.
+        """
         return entity.id

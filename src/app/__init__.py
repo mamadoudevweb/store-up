@@ -21,6 +21,12 @@ def build_session_factory(db) -> Callable[[], Session]:
     return sessionmaker(bind=db.engine)
 
 def register_domain_event_handlers(dispatcher: EventDispatcher, domain_service: DomainService) -> None:
+    """Register event handlers for stock and sale domain events.
+    
+    Parameters:
+    	dispatcher (EventDispatcher): Dispatcher that receives domain events.
+    	domain_service (DomainService): Service used by the registered handlers.
+    """
     from src.domains.stock import event_handlers as stock_event_handlers
     from src.domains.sale import event_handlers as sale_event_handlers
     
@@ -28,6 +34,16 @@ def register_domain_event_handlers(dispatcher: EventDispatcher, domain_service: 
     sale_event_handlers.register(dispatcher, domain_service)
 
 def create_app(env: str | None = None) -> Flask:
+    """
+    Create and configure the Flask application for the selected environment.
+    
+    Parameters:
+        env (str | None): Configuration environment name. When omitted, uses the
+            ``FLASK_ENV`` environment variable or ``"development"``.
+    
+    Returns:
+        Flask: The configured Flask application.
+    """
     env_name = env or os.getenv("FLASK_ENV", "development") or "development"
     config = get_config(env_name)
 

@@ -17,6 +17,15 @@ class SaleFilters(EntityFilter):
     customer_name: str | None = None
 
     def apply(self, stmt: Select[tuple[Any, ...]]) -> Select[tuple[Any, ...]]:
+        """
+        Apply the configured filters to a sale query.
+        
+        Parameters:
+        	stmt (Select[tuple[Any, ...]]): The sale query to filter.
+        
+        Returns:
+        	Select[tuple[Any, ...]]: The query with the configured status, seller account, and customer name filters applied.
+        """
         if self.status:
             stmt = stmt.where(SaleModel.status == self.status)
         if self.seller_account_id:
@@ -32,6 +41,15 @@ class RefundFilters(EntityFilter):
     status: str | None = None
 
     def apply(self, stmt: Select[tuple[Any, ...]]) -> Select[tuple[Any, ...]]:
+        """
+        Apply the configured sale and status filters to a refund query.
+        
+        Parameters:
+        	stmt (Select[tuple[Any, ...]]): The refund query to filter.
+        
+        Returns:
+        	Select[tuple[Any, ...]]: The query with the configured filters applied.
+        """
         if self.sale_id:
             stmt = stmt.where(RefundModel.sale_id == self.sale_id)
         if self.status:

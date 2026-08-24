@@ -40,6 +40,7 @@ def test_sale_creation(sample_sale_lines):
 
 
 def test_sale_completion(sample_sale_lines):
+    """Verify that a pending sale can be completed and emits a SaleCompleted event."""
     sale = Sale.checkout(
         seller_account_id=uuid.uuid4(),
         payment_method_id=uuid.uuid4(),

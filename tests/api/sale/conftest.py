@@ -3,6 +3,12 @@ import pytest
 
 @pytest.fixture
 def test_variant_id(app, mock_actor):
+    """
+    Create a test product variant with initial stock and provide its identifier.
+    
+    Returns:
+        str: The identifier of the created product variant.
+    """
     with app.app_context():
         domain_service = app.extensions["domain_service"]
         

@@ -15,6 +15,12 @@ refund_bp = Blueprint("refunds", __name__, url_prefix="/api/v1/refunds")
 @refund_bp.route("", methods=["POST"])
 @jwt_required()
 def process_refund() -> EnvelopeResponse:
+    """
+    Create a refund request for a sale.
+    
+    Returns:
+    	EnvelopeResponse: The validated refund response with HTTP status 201.
+    """
     from flask import request
     data = RefundRequest.model_validate(request.get_json())
     domain_service = cast(DomainService, current_app.extensions["domain_service"])
