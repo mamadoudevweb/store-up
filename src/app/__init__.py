@@ -21,8 +21,8 @@ def build_session_factory(db) -> Callable[[], Session]:
     return sessionmaker(bind=db.engine)
 
 def register_domain_event_handlers(dispatcher: EventDispatcher, domain_service: DomainService) -> None:
-    from src.domains.inventory import event_handlers as inventory_event_handlers
-    inventory_event_handlers.register(dispatcher, domain_service)
+    from src.domains.stock import event_handlers as stock_event_handlers
+    stock_event_handlers.register(dispatcher, domain_service)
 
 def create_app(env: str | None = None) -> Flask:
     env_name = env or os.getenv("FLASK_ENV", "development") or "development"
@@ -63,7 +63,7 @@ def create_app(env: str | None = None) -> Flask:
             import src.domains.auth.repositories.sql.models
             import src.domains.rbac.repositories.sql.orms
             import src.domains.catalog.repositories.sql.orms
-            import src.domains.inventory.repositories.sql.orms
+            import src.domains.stock.repositories.sql.orms
         except ImportError:
             pass
 

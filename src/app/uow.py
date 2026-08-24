@@ -20,9 +20,9 @@ from src.domains.catalog.repositories.sql.brand_repository import SqlBrandReposi
 from src.domains.catalog.repositories.sql.category_repository import SqlCategoryRepository
 from src.domains.catalog.repositories.sql.product_image_repository import SqlProductImageRepository
 from src.domains.catalog.repositories.sql.attribute_repository import SqlAttributeRepository, SqlAttributeValueRepository
-# Inventory
-from src.domains.inventory.repositories.sql.inventory_item_repository import SqlInventoryItemRepository
-from src.domains.inventory.repositories.sql.stock_movement_repository import SqlStockMovementRepository
+# Stock
+from src.domains.stock.repositories.sql.stock_item_repository import SqlStockItemRepository
+from src.domains.stock.repositories.sql.stock_movement_repository import SqlStockMovementRepository
 
 REPOSITORY_CLASSES: dict[str, type[Any]] = {
     # Account domain
@@ -45,8 +45,8 @@ REPOSITORY_CLASSES: dict[str, type[Any]] = {
     "attributes": SqlAttributeRepository,
     "attribute_values": SqlAttributeValueRepository,
 
-    # Inventory domain
-    "inventory_items": SqlInventoryItemRepository,
+    # Stock domain
+    "stock_items": SqlStockItemRepository,
     "stock_movements": SqlStockMovementRepository,
 }
 

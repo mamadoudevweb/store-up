@@ -3,7 +3,7 @@ from flask import Flask
 
 if TYPE_CHECKING:
     from src.domains.catalog.services import CatalogDomainService
-    from src.domains.inventory.services import InventoryDomainService
+    from src.domains.stock.services import StockDomainService
     from src.domains.rbac.services import RbacDomainService
     from src.domains.accounts.services import AccountDomainService
     from src.domains.auth.services.auth import AuthService
@@ -14,7 +14,7 @@ class DomainService:
 
     if TYPE_CHECKING:
         catalog: CatalogDomainService
-        inventory: InventoryDomainService
+        stock: StockDomainService
         rbac: RbacDomainService
         accounts: AccountDomainService
         auth: AuthService
