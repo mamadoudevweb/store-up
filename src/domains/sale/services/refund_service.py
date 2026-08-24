@@ -45,10 +45,12 @@ class RefundService(BaseService):
             after_map = before_map.copy()
             refund_lines = []
             
+            aggregated_requests = {}
             for line_data in lines_data:
                 sale_line_id = uuid.UUID(str(line_data["sale_line_id"]))
-                quantity = line_data["quantity"]
-                
+                aggregated_requests[sale_line_id] = aggregated_requests.get(sale_line_id, 0) + line_data["quantity"]
+            
+            for sale_line_id, quantity in aggregated_requests.items():
                 sale_line = next((sl for sl in sale.lines if sl.id == sale_line_id), None)
                 if not sale_line:
                     raise SaleLineNotFoundError(f"Sale line {sale_line_id} not found in sale {sale_id}")

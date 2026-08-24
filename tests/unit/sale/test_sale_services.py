@@ -151,6 +151,43 @@ def test_request_refund(uow_mock, uow_factory, account_mock):
     uow_mock.refunds.add.assert_called_once_with(refund)
 
 
+def test_request_refund_duplicate_lines_exceed_quantity(uow_mock, uow_factory, account_mock):
+    sale = MagicMock()
+    
+    sale_line = MagicMock()
+    sale_line.id = uuid.uuid4()
+    sale_line.quantity = 5
+    sale_line.refunded_quantity = 0
+    sale_line.unit_price = 100
+    sale_line.discount = 10
+    sale.lines = [sale_line]
+    sale.subtotal = 450
+    sale.discount = 45
+    
+    uow_mock.sales.get.return_value = sale
+    
+    service = RefundService(uow_factory)
+    
+    from src.domains.sale.exceptions import RefundQuantityExceededError
+    with pytest.raises(RefundQuantityExceededError):
+        service.request_refund(
+            account=account_mock,
+            sale_id=uuid.uuid4(),
+            processed_by=uuid.uuid4(),
+            reason="Duplicate lines",
+            lines_data=[
+                {
+                    "sale_line_id": sale_line.id,
+                    "quantity": 3
+                },
+                {
+                    "sale_line_id": sale_line.id,
+                    "quantity": 3
+                }
+            ]
+        )
+
+
 def test_request_refund_partial_cumulative(uow_mock, uow_factory, account_mock):
     sale = MagicMock()
     

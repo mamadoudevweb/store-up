@@ -104,12 +104,20 @@ class SaleService(BaseService):
             if not sale:
                 raise SaleNotFoundError()
                 
-            # Increment refunded_quantity for each line
+            # Aggregate requested lines
+            import uuid
+            aggregated_requests = {}
             for line_data in lines_data:
-                sale_line_id = line_data["sale_line_id"]
-                quantity = line_data["quantity"]
+                sale_line_id = uuid.UUID(str(line_data["sale_line_id"]))
+                aggregated_requests[sale_line_id] = aggregated_requests.get(sale_line_id, 0) + line_data["quantity"]
+
+            # Increment refunded_quantity for each line after revalidation
+            for sale_line_id, quantity in aggregated_requests.items():
                 sale_line = next((sl for sl in sale.lines if str(sl.id) == str(sale_line_id)), None)
                 if sale_line:
+                    if sale_line.refunded_quantity + quantity > sale_line.quantity:
+                        from src.domains.sale.exceptions import RefundQuantityExceededError
+                        raise RefundQuantityExceededError(f"Cannot refund more than sold for line {sale_line_id}")
                     sale_line.refunded_quantity += quantity
 
             sale.process_refund(refund_id=refund_id, amount=amount)
