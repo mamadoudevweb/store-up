@@ -30,7 +30,6 @@ def checkout() -> EnvelopeResponse:
         lines_data=lines_data,
         customer_name=data.customer_name,
         discount=data.discount,
-        sale_number=data.sale_number,
     )
     
     return ok(SaleResponse.model_validate(result.data).model_dump(mode="json"), status=201)

@@ -17,7 +17,6 @@ class SaleService(BaseService):
         lines_data: list[dict[str, typing.Any]],
         customer_name: str | None = None,
         discount: int = 0,
-        sale_number: str | None = None,
     ) -> ServiceResult[Sale]:
         """
         Initiates a sale transaction.
@@ -54,7 +53,6 @@ class SaleService(BaseService):
                 lines=sale_lines,
                 customer_name=customer_name,
                 discount=discount,
-                number=sale_number,
             )
             sale.id = sale_id
             for line in sale.lines:
