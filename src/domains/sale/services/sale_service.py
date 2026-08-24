@@ -1,4 +1,5 @@
 import uuid
+import typing
 
 from src.core.services.base_service import BaseService, SupportsPermissionCheck
 from src.core.services.result import ServiceResult
@@ -13,7 +14,7 @@ class SaleService(BaseService):
         account: SupportsPermissionCheck,
         seller_account_id: uuid.UUID,
         payment_method_id: uuid.UUID,
-        lines_data: list[dict],
+        lines_data: list[dict[str, typing.Any]],
         customer_name: str | None = None,
         discount: int = 0,
         sale_number: str | None = None,
@@ -97,7 +98,7 @@ class SaleService(BaseService):
             uow.commit()
             return ServiceResult(data=sale)
 
-    def process_refund(self, account: SupportsPermissionCheck, sale_id: uuid.UUID, refund_id: uuid.UUID, lines_data: list[dict], amount: int) -> ServiceResult[Sale]:
+    def process_refund(self, account: SupportsPermissionCheck, sale_id: uuid.UUID, refund_id: uuid.UUID, lines_data: list[dict[str, typing.Any]], amount: int) -> ServiceResult[Sale]:
         """Called by event handler when a refund is requested. Mutates sale state and emits SaleReturned."""
         self._authorize(account, "sale", "sale", "update")
         with self._uow_factory() as uow:

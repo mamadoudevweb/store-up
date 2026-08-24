@@ -1,7 +1,8 @@
 """StockItem repository."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
+from sqlalchemy.engine import CursorResult
 
 from sqlalchemy.sql import Select
 
@@ -37,7 +38,7 @@ class SqlStockItemRepository(BaseSqlRepository[StockItem, StockItemFilter]):
             .where((StockItemModel.quantity_on_hand - StockItemModel.quantity_reserved) >= qty)
             .values(quantity_reserved=StockItemModel.quantity_reserved + qty)
         )
-        result = self._session.execute(stmt)
+        result = cast(CursorResult[Any], self._session.execute(stmt))
         return result.rowcount > 0
 
     def atomic_release(self, variant_id: Any, qty: int) -> bool:
@@ -49,5 +50,5 @@ class SqlStockItemRepository(BaseSqlRepository[StockItem, StockItemFilter]):
             .where(StockItemModel.quantity_reserved >= qty)
             .values(quantity_reserved=StockItemModel.quantity_reserved - qty)
         )
-        result = self._session.execute(stmt)
+        result = cast(CursorResult[Any], self._session.execute(stmt))
         return result.rowcount > 0
