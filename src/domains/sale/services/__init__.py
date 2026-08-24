@@ -7,6 +7,9 @@ from src.domains.sale.services.refund_service import RefundService
 class SaleDomainService:
     """Aggregates sale entity services."""
     
+    sale: SaleService
+    refund: RefundService
+    
     def __init__(self, **entity_services: Any) -> None:
         self.__dict__.update(entity_services)
 

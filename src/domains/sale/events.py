@@ -1,4 +1,5 @@
 import uuid
+import typing
 from dataclasses import dataclass
 from src.core.entities.events import DomainEvent
 
@@ -42,6 +43,6 @@ class RefundRequested(DomainEvent):
     refund_id: uuid.UUID
     sale_id: uuid.UUID
     amount: int
-    lines_data: list[dict]
+    lines_data: list[dict[str, typing.Any]]
     event_name: str = "refund_requested"
 

@@ -16,7 +16,6 @@ class CheckoutRequest(BaseModel):
     lines: list[SaleLineInput] = Field(min_length=1)
     customer_name: str | None = None
     discount: int = Field(ge=0, default=0)
-    sale_number: str | None = None
 
 
 class SaleLineResponse(BaseModel):

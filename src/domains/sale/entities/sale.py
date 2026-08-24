@@ -48,6 +48,10 @@ class Sale(BaseEntity[uuid.UUID]):
         
         if total < 0:
             raise ValueError("Total cannot be negative")
+            
+        if number is None:
+            now = datetime.now(timezone.utc)
+            number = f"SALE-{now.strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
 
         sale = cls(
             id=uuid.uuid4(),

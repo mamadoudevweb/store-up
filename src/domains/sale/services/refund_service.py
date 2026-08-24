@@ -1,4 +1,5 @@
 import uuid
+import typing
 
 from src.core.services.base_service import BaseService, SupportsPermissionCheck
 from src.core.services.result import ServiceResult
@@ -14,7 +15,7 @@ class RefundService(BaseService):
         sale_id: uuid.UUID,
         processed_by: uuid.UUID,
         reason: str,
-        lines_data: list[dict],
+        lines_data: list[dict[str, typing.Any]],
     ) -> ServiceResult[Refund]:
         """
         Creates a refund for a completed sale.
