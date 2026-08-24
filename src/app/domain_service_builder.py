@@ -14,6 +14,7 @@ from src.domains.catalog.services import CatalogDomainService
 from src.domains.stock.services import StockDomainService
 from src.domains.stock.services.stock_item_service import StockItemService
 from src.domains.stock.services.stock_movement_service import StockMovementService
+from src.domains.sale.services import SaleDomainService, SaleService, RefundService
 
 
 def build_domain_service(
@@ -30,5 +31,9 @@ def build_domain_service(
         stock=StockDomainService(
             item=StockItemService(uow_factory),
             movement=StockMovementService(uow_factory),
+        ),
+        sale=SaleDomainService(
+            sale=SaleService(uow_factory),
+            refund=RefundService(uow_factory),
         ),
     )

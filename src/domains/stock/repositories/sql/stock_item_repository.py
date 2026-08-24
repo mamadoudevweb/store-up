@@ -27,3 +27,27 @@ class SqlStockItemRepository(BaseSqlRepository[StockItem, StockItemFilter]):
             col = getattr(StockItemModel, f.sort_by)
             query = query.order_by(col.desc() if f.sort_desc else col.asc())
         return query
+
+    def atomic_reserve(self, variant_id: Any, qty: int) -> bool:
+        from sqlalchemy import update
+        
+        stmt = (
+            update(StockItemModel)
+            .where(StockItemModel.variant_id == variant_id)
+            .where((StockItemModel.quantity_on_hand - StockItemModel.quantity_reserved) >= qty)
+            .values(quantity_reserved=StockItemModel.quantity_reserved + qty)
+        )
+        result = self._session.execute(stmt)
+        return result.rowcount > 0
+
+    def atomic_release(self, variant_id: Any, qty: int) -> bool:
+        from sqlalchemy import update
+        
+        stmt = (
+            update(StockItemModel)
+            .where(StockItemModel.variant_id == variant_id)
+            .where(StockItemModel.quantity_reserved >= qty)
+            .values(quantity_reserved=StockItemModel.quantity_reserved - qty)
+        )
+        result = self._session.execute(stmt)
+        return result.rowcount > 0
