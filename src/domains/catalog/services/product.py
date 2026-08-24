@@ -35,7 +35,8 @@ class ProductService(BaseService):
             product = uow.products.add(product)
             uow.track(product)
 
-            assert product.id is not None
+            if product.id is None:
+                raise ValueError("product ID cannot be None")
             # First variant is always created alongside the product
             if uow.product_variants.exists(ProductVariantFilter(sku=sku)):
                 from src.domains.catalog.exceptions import DuplicateSkuError

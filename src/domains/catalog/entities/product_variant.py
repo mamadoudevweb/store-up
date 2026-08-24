@@ -41,7 +41,8 @@ class ProductVariant(BaseEntity[uuid.UUID]):
             status=VariantStatus.DRAFT,
         )
         from src.domains.catalog.events import VariantCreated
-        assert variant.id is not None
+        if variant.id is None:
+            raise ValueError("variant ID cannot be None")
         variant.register_event(
             VariantCreated(variant_id=variant.id, product_id=variant.product_id, sku=variant.sku)
         )
@@ -62,14 +63,16 @@ class ProductVariant(BaseEntity[uuid.UUID]):
         if sell_price is not None:
             self.sell_price = sell_price
         from src.domains.catalog.events import VariantUpdated
-        assert self.id is not None
+        if self.id is None:
+            raise ValueError("self ID cannot be None")
         self.register_event(VariantUpdated(variant_id=self.id, product_id=self.product_id, sku=self.sku))
 
     def change_status(self, new_status: VariantStatus) -> None:
+        if self.id is None:
+            raise ValueError("self ID cannot be None")
         old_status = self.status
         self.status = new_status
         from src.domains.catalog.events import VariantStatusChanged
-        assert self.id is not None
         self.register_event(
             VariantStatusChanged(
                 variant_id=self.id,
@@ -79,7 +82,8 @@ class ProductVariant(BaseEntity[uuid.UUID]):
         )
 
     def mark_deleted(self) -> None:
+        if self.id is None:
+            raise ValueError("self ID cannot be None")
         self.change_status(VariantStatus.ARCHIVED)
         from src.domains.catalog.events import VariantDeleted
-        assert self.id is not None
         self.register_event(VariantDeleted(variant_id=self.id, product_id=self.product_id))

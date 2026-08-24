@@ -22,7 +22,8 @@ class Role(Entity[UUID]):
         role = cls(id=uuid.uuid4(), name=name, description=description)
 
         from src.domains.rbac.events import RoleCreated
-        assert role.id is not None
+        if role.id is None:
+            raise ValueError("role ID cannot be None")
         role.register_event(
             RoleCreated(
                 role_id=role.id,
@@ -34,12 +35,13 @@ class Role(Entity[UUID]):
 
     
     def update(self, description: str | None = None) -> None:
+        if self.id is None:
+            raise ValueError("self ID cannot be None")
         if description is not None:
             self.description = description
         self.updated_at = datetime.now(timezone.utc)
 
         from src.domains.rbac.events import RoleUpdated
-        assert self.id is not None
         self.register_event(
             RoleUpdated(
                 role_id=self.id,
@@ -48,6 +50,7 @@ class Role(Entity[UUID]):
         )
 
     def mark_deleted(self) -> None:
+        if self.id is None:
+            raise ValueError("self ID cannot be None")
         from src.domains.rbac.events import RoleDeleted
-        assert self.id is not None
         self.register_event(RoleDeleted(role_id=self.id, name=self.name))

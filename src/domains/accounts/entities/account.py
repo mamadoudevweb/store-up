@@ -35,15 +35,17 @@ class Account(Entity[UUID]):
             status=AccountStatus.ACTIVE,
         )
         from src.domains.accounts.events import AccountCreated
-        assert account.id is not None
+        if account.id is None:
+            raise ValueError("account ID cannot be None")
         account.register_event(AccountCreated(account_id=account.id))
         return account
 
     def suspend(self) -> None:
+        if self.id is None:
+            raise ValueError("self ID cannot be None")
         self.status = AccountStatus.SUSPENDED
         self.updated_at = datetime.now(timezone.utc)
         from src.domains.accounts.events import AccountSuspended
-        assert self.id is not None
         self.register_event(AccountSuspended(account_id=self.id))
 
     def update(
@@ -60,7 +62,8 @@ class Account(Entity[UUID]):
             self.birth_date = birth_date
         self.updated_at = datetime.now(timezone.utc)
         from src.domains.accounts.events import AccountUpdated
-        assert self.id is not None
+        if self.id is None:
+            raise ValueError("self ID cannot be None")
         self.register_event(AccountUpdated(account_id=self.id))
 
     @property

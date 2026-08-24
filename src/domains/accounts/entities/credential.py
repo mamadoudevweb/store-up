@@ -36,7 +36,8 @@ class Credential(Entity[UUID]):
             updated_at=now,
         )
         from src.domains.accounts.events import CredentialSet
-        assert cred.id is not None
+        if cred.id is None:
+            raise ValueError("cred ID cannot be None")
         cred.register_event(CredentialSet(account_id=account_id, credential_id=cred.id))
         return cred
 

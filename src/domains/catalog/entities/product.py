@@ -38,7 +38,8 @@ class Product(BaseEntity[uuid.UUID]):
             status=ProductStatus.DRAFT,
         )
         from src.domains.catalog.events import ProductCreated
-        assert product.id is not None
+        if product.id is None:
+            raise ValueError("product ID cannot be None")
         product.register_event(ProductCreated(product_id=product.id, name=product.name))
         return product
 
@@ -57,14 +58,16 @@ class Product(BaseEntity[uuid.UUID]):
         if brand_id is not None:
             self.brand_id = brand_id
         from src.domains.catalog.events import ProductUpdated
-        assert self.id is not None
+        if self.id is None:
+            raise ValueError("self ID cannot be None")
         self.register_event(ProductUpdated(product_id=self.id, name=self.name))
 
     def change_status(self, new_status: ProductStatus) -> None:
+        if self.id is None:
+            raise ValueError("self ID cannot be None")
         old_status = self.status
         self.status = new_status
         from src.domains.catalog.events import ProductStatusChanged
-        assert self.id is not None
         self.register_event(
             ProductStatusChanged(
                 product_id=self.id,
@@ -74,7 +77,8 @@ class Product(BaseEntity[uuid.UUID]):
         )
 
     def mark_deleted(self) -> None:
+        if self.id is None:
+            raise ValueError("self ID cannot be None")
         self.change_status(ProductStatus.ARCHIVED)
         from src.domains.catalog.events import ProductDeleted
-        assert self.id is not None
         self.register_event(ProductDeleted(product_id=self.id))

@@ -18,7 +18,8 @@ class ProductCategory(BaseEntity[uuid.UUID]):
     def assign(cls, product_id: uuid.UUID, category_id: uuid.UUID) -> "ProductCategory":
         pc = cls(id=uuid.uuid4(), product_id=product_id, category_id=category_id)
         from src.domains.catalog.events import ProductCategoryAssigned
-        assert pc.id is not None
+        if pc.id is None:
+            raise ValueError("pc ID cannot be None")
         pc.register_event(
             ProductCategoryAssigned(product_id=pc.product_id, category_id=pc.category_id)
         )

@@ -17,7 +17,8 @@ class Attribute(BaseEntity[uuid.UUID]):
     def create(cls, name: str) -> "Attribute":
         attr = cls(id=uuid.uuid4(), name=name)
         from src.domains.catalog.events import AttributeCreated
-        assert attr.id is not None
+        if attr.id is None:
+            raise ValueError("attr ID cannot be None")
         attr.register_event(AttributeCreated(attribute_id=attr.id, name=attr.name))
         return attr
 
@@ -33,7 +34,8 @@ class AttributeValue(BaseEntity[uuid.UUID]):
     def create(cls, attribute_id: uuid.UUID, value: str) -> "AttributeValue":
         av = cls(id=uuid.uuid4(), attribute_id=attribute_id, value=value)
         from src.domains.catalog.events import AttributeValueCreated
-        assert av.id is not None
+        if av.id is None:
+            raise ValueError("av ID cannot be None")
         av.register_event(
             AttributeValueCreated(attribute_value_id=av.id, attribute_id=av.attribute_id, value=av.value)
         )

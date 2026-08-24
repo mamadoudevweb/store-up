@@ -27,7 +27,8 @@ class Permission(Entity[UUID]):
         )
 
         from src.domains.rbac.events import PermissionCreated
-        assert permission.id is not None
+        if permission.id is None:
+            raise ValueError("permission ID cannot be None")
         permission.register_event(
             PermissionCreated(
                 permission_id=permission.id,

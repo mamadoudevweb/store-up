@@ -33,7 +33,8 @@ class ProductVariantAttribute(BaseEntity[uuid.UUID]):
             attribute_value_id=attribute_value_id,
         )
         from src.domains.catalog.events import VariantAttributeSet
-        assert pva.id is not None
+        if pva.id is None:
+            raise ValueError("pva ID cannot be None")
         pva.register_event(
             VariantAttributeSet(
                 variant_id=pva.variant_id,
