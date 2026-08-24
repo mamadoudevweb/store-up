@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable
 from src.core.repositories.base_uow import BaseUnitOfWork
 from src.core.events.dispatcher import EventDispatcher
