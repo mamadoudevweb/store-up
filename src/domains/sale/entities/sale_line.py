@@ -30,6 +30,10 @@ class SaleLine(BaseEntity[uuid.UUID]):
             raise ValueError("Sale line quantity must be positive")
         if unit_price < 0:
             raise ValueError("Unit price cannot be negative")
+        if discount < 0:
+            raise ValueError("Discount cannot be negative")
+        if discount > unit_price:
+            raise ValueError("Discount cannot exceed unit price")
         
         return cls(
             id=uuid.uuid4(),
