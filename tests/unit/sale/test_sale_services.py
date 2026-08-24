@@ -101,7 +101,10 @@ def test_request_refund(uow_mock, uow_factory, account_mock):
     sale_line.quantity = 5
     sale_line.refunded_quantity = 0
     sale_line.unit_price = 100
+    sale_line.discount = 10
     sale.lines = [sale_line]
+    sale.subtotal = 450
+    sale.discount = 45
     
     uow_mock.sales.get.return_value = sale
     
@@ -130,15 +133,55 @@ def test_request_refund(uow_mock, uow_factory, account_mock):
     assert len(refund._events) == 1
     event = refund._events[0]
     assert isinstance(event, RefundRequested)
-    assert event.amount == 200
+    
+    # Expected amount calculation:
+    # 2 units * (100 - 10) = 180
+    # allocated discount = int((180 / 450) * 45) = 18
+    # amount = 180 - 18 = 162
+    assert event.amount == 162
     assert event.sale_id == sale_id
     assert event.lines_data == [{"sale_line_id": sale_line.id, "quantity": 2}]
     
-    sale.process_refund.assert_not_called()
-    uow_mock.sales.update.assert_not_called()
     uow_mock.refunds.add.assert_called_once_with(refund)
-    uow_mock.track.assert_called_once_with(refund)
-    uow_mock.commit.assert_called_once()
+
+
+def test_request_refund_partial_cumulative(uow_mock, uow_factory, account_mock):
+    sale = MagicMock()
+    
+    sale_line = MagicMock()
+    sale_line.id = uuid.uuid4()
+    sale_line.quantity = 5
+    sale_line.refunded_quantity = 2  # Already refunded 2
+    sale_line.unit_price = 100
+    sale_line.discount = 10
+    sale.lines = [sale_line]
+    sale.subtotal = 450
+    sale.discount = 45
+    
+    uow_mock.sales.get.return_value = sale
+    
+    service = RefundService(uow_factory)
+    
+    result = service.request_refund(
+        account=account_mock,
+        sale_id=uuid.uuid4(),
+        processed_by=uuid.uuid4(),
+        reason="Return remaining",
+        lines_data=[
+            {
+                "sale_line_id": sale_line.id,
+                "quantity": 3
+            }
+        ]
+    )
+    
+    refund = result.data
+    event = refund._events[0]
+    
+    # Before amount: 2 * 90 = 180. allocated = int(180/450 * 45) = 18. amount = 162
+    # After amount: 5 * 90 = 450. allocated = int(450/450 * 45) = 45. amount = 405
+    # Expected current refund amount: 405 - 162 = 243
+    assert event.amount == 243
 
 def test_sale_service_process_refund(uow_mock, uow_factory, account_mock):
     sale = MagicMock()

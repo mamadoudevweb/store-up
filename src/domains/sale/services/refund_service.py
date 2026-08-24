@@ -7,8 +7,19 @@ from src.domains.sale.entities.refund import Refund
 from src.domains.sale.entities.refund_line import RefundLine
 from src.domains.sale.exceptions import SaleNotFoundError, RefundNotFoundError, SaleLineNotFoundError, RefundQuantityExceededError
 
+if typing.TYPE_CHECKING:
+    from src.domains.sale.entities.sale import Sale
+
 
 class RefundService(BaseService):
+    def _calc_total_refund(self, sale: "Sale", refund_qty_map: dict[uuid.UUID, int]) -> int:
+        total_net = sum(
+            (line.unit_price - line.discount) * refund_qty_map.get(line.id, 0)
+            for line in sale.lines
+        )
+        allocated = int((total_net / sale.subtotal) * sale.discount) if sale.subtotal > 0 else 0
+        return total_net - allocated
+
     def request_refund(
         self,
         account: SupportsPermissionCheck,
@@ -25,16 +36,20 @@ class RefundService(BaseService):
         with self._uow_factory() as uow:
             sale = getattr(uow, "sales").get(sale_id)
             if not sale:
+                from src.domains.sale.exceptions import SaleNotFoundError
                 raise SaleNotFoundError()
+                
+            before_map = {line.id: line.refunded_quantity for line in sale.lines}
+            amount_before = self._calc_total_refund(sale, before_map)
 
+            after_map = before_map.copy()
             refund_lines = []
-            amount = 0
             
             for line_data in lines_data:
-                sale_line_id = line_data["sale_line_id"]
+                sale_line_id = uuid.UUID(str(line_data["sale_line_id"]))
                 quantity = line_data["quantity"]
                 
-                sale_line = next((sl for sl in sale.lines if str(sl.id) == str(sale_line_id)), None)
+                sale_line = next((sl for sl in sale.lines if sl.id == sale_line_id), None)
                 if not sale_line:
                     raise SaleLineNotFoundError(f"Sale line {sale_line_id} not found in sale {sale_id}")
                 
@@ -43,6 +58,7 @@ class RefundService(BaseService):
                 if sale_line.refunded_quantity + quantity > sale_line.quantity:
                     raise RefundQuantityExceededError(f"Cannot refund more than sold for line {sale_line_id}")
                     
+                after_map[sale_line_id] += quantity
                 refund_lines.append(
                     RefundLine.create(
                         refund_id=uuid.uuid4(),
@@ -51,7 +67,8 @@ class RefundService(BaseService):
                     )
                 )
 
-                amount += sale_line.unit_price * quantity
+            amount_after = self._calc_total_refund(sale, after_map)
+            amount = amount_after - amount_before
 
             refund = Refund.create(
                 sale_id=sale_id,

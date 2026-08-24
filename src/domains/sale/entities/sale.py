@@ -44,6 +44,9 @@ class Sale(BaseEntity[uuid.UUID]):
             raise ValueError("Sale must have at least one line")
             
         subtotal = sum(line.subtotal for line in lines)
+        if discount < 0:
+            raise ValueError("Order-level discount cannot be negative")
+            
         total = subtotal - discount
         
         if total < 0:

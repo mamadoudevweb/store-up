@@ -83,3 +83,35 @@ def test_invalid_state_transition(sample_sale_lines):
     
     with pytest.raises(InvalidSaleStateError):
         sale.mark_failed("Late fail")
+
+
+def test_sale_line_negative_discount():
+    with pytest.raises(ValueError, match="Discount cannot be negative"):
+        SaleLine.create(
+            sale_id=uuid.uuid4(),
+            variant_id=uuid.uuid4(),
+            quantity=1,
+            unit_price=100,
+            discount=-10
+        )
+
+
+def test_sale_line_discount_exceeds_unit_price():
+    with pytest.raises(ValueError, match="Discount cannot exceed unit price"):
+        SaleLine.create(
+            sale_id=uuid.uuid4(),
+            variant_id=uuid.uuid4(),
+            quantity=1,
+            unit_price=100,
+            discount=150
+        )
+
+
+def test_sale_checkout_negative_discount(sample_sale_lines):
+    with pytest.raises(ValueError, match="Order-level discount cannot be negative"):
+        Sale.checkout(
+            seller_account_id=uuid.uuid4(),
+            payment_method_id=uuid.uuid4(),
+            lines=sample_sale_lines,
+            discount=-50
+        )
