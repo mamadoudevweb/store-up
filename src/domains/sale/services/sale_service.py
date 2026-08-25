@@ -106,7 +106,7 @@ class SaleService(BaseService):
                 
             # Aggregate requested lines
             import uuid
-            aggregated_requests = {}
+            aggregated_requests: dict[uuid.UUID, int] = {}
             for line_data in lines_data:
                 sale_line_id = uuid.UUID(str(line_data["sale_line_id"]))
                 aggregated_requests[sale_line_id] = aggregated_requests.get(sale_line_id, 0) + line_data["quantity"]
