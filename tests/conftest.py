@@ -9,10 +9,13 @@ from sqlalchemy.orm import sessionmaker
 from src.app import create_app
 from src.app.extensions import db
 from src.app.uow import REPOSITORY_CLASSES
+from src.config.testing import TestingConfig
 from src.core.events.dispatcher import EventDispatcher
 from src.core.repositories.sql.sql_uow import SqlUnitOfWork
 from src.core.services.base_service import SupportsPermissionCheck
 
+
+config = TestingConfig()
 
 @pytest.fixture(scope="session")
 def engine():
@@ -44,22 +47,9 @@ def uow_factory(engine):
 
 @pytest.fixture
 def app(engine, monkeypatch):
-    from src.config.testing import TestingConfig
     import redis
-    import os
 
-    # Determine worker-specific Redis DB index for parallel test isolation
-    worker_id = os.environ.get("PYTEST_XDIST_WORKER", os.environ.get("PYTEST_XDIST_WORKER_ID"))
-    if worker_id:
-        # Extract numeric suffix from worker id (e.g., "gw0" -> 0, "gw1" -> 1)
-        worker_num = int(''.join(filter(str.isdigit, worker_id)) or '0')
-        # Use DB indices 15-30 for workers (15 + worker_num)
-        redis_url = TestingConfig().REDIS_URL.rsplit('/', 1)[0] + f'/{15 + worker_num}'
-    else:
-        # Single-process test run uses the default DB 15
-        redis_url = TestingConfig().REDIS_URL
-
-    test_redis = redis.from_url(redis_url, decode_responses=True)
+    test_redis = redis.from_url(config.REDIS_URL, decode_responses=True)
     test_redis.flushdb()
     # Create the Flask app in testing mode
     app = create_app("testing")
