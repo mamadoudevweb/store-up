@@ -45,7 +45,7 @@ class RefundService(BaseService):
             after_map = before_map.copy()
             refund_lines = []
             
-            aggregated_requests = {}
+            aggregated_requests: dict[uuid.UUID, int] = {}
             for line_data in lines_data:
                 sale_line_id = uuid.UUID(str(line_data["sale_line_id"]))
                 aggregated_requests[sale_line_id] = aggregated_requests.get(sale_line_id, 0) + line_data["quantity"]
