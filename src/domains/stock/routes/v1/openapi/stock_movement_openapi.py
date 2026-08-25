@@ -42,7 +42,10 @@ def register_stock_movement_docs() -> None:
                 "summary": "Get stock movement by ID",
                 "parameters": [{"name": "movement_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "responses": {
-                    "200": {"content": {"application/json": {"schema": StockMovementOutSchema.model_json_schema()}}},
+                    "200": {
+                        "description": "Stock movement details",
+                        "content": {"application/json": {"schema": StockMovementOutSchema.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found
                 },

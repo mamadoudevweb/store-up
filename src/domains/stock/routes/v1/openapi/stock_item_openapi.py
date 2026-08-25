@@ -48,7 +48,10 @@ def register_stock_item_docs() -> None:
                 "summary": "Get stock item by variant",
                 "parameters": [{"name": "variant_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "responses": {
-                    "200": {"content": {"application/json": {"schema": StockItemOutSchema.model_json_schema()}}},
+                    "200": {
+                        "description": "Stock item details",
+                        "content": {"application/json": {"schema": StockItemOutSchema.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found
                 },
@@ -65,7 +68,10 @@ def register_stock_item_docs() -> None:
                 "parameters": [{"name": "variant_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "requestBody": {"content": {"application/json": {"schema": AdjustStockRequest.model_json_schema()}}},
                 "responses": {
-                    "200": {"content": {"application/json": {"schema": StockItemOutSchema.model_json_schema()}}},
+                    "200": {
+                        "description": "Stock adjusted successfully",
+                        "content": {"application/json": {"schema": StockItemOutSchema.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found,
                     **validation_errors
@@ -83,7 +89,10 @@ def register_stock_item_docs() -> None:
                 "parameters": [{"name": "variant_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "requestBody": {"content": {"application/json": {"schema": ReserveStockRequest.model_json_schema()}}},
                 "responses": {
-                    "200": {"content": {"application/json": {"schema": StockItemOutSchema.model_json_schema()}}},
+                    "200": {
+                        "description": "Stock reserved successfully",
+                        "content": {"application/json": {"schema": StockItemOutSchema.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found,
                     **validation_errors
@@ -101,7 +110,10 @@ def register_stock_item_docs() -> None:
                 "parameters": [{"name": "variant_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "requestBody": {"content": {"application/json": {"schema": ReserveStockRequest.model_json_schema()}}},
                 "responses": {
-                    "200": {"content": {"application/json": {"schema": StockItemOutSchema.model_json_schema()}}},
+                    "200": {
+                        "description": "Stock released successfully",
+                        "content": {"application/json": {"schema": StockItemOutSchema.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found,
                     **validation_errors
@@ -119,7 +131,10 @@ def register_stock_item_docs() -> None:
                 "parameters": [{"name": "variant_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "requestBody": {"content": {"application/json": {"schema": ReserveStockRequest.model_json_schema()}}},
                 "responses": {
-                    "200": {"content": {"application/json": {"schema": StockItemOutSchema.model_json_schema()}}},
+                    "200": {
+                        "description": "Stock shipped successfully",
+                        "content": {"application/json": {"schema": StockItemOutSchema.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found,
                     **validation_errors
@@ -137,7 +152,10 @@ def register_stock_item_docs() -> None:
                 "parameters": [{"name": "variant_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "requestBody": {"content": {"application/json": {"schema": SetLowStockThresholdRequest.model_json_schema()}}},
                 "responses": {
-                    "200": {"content": {"application/json": {"schema": StockItemOutSchema.model_json_schema()}}},
+                    "200": {
+                        "description": "Low stock threshold updated",
+                        "content": {"application/json": {"schema": StockItemOutSchema.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found,
                     **validation_errors
