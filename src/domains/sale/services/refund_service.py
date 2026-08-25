@@ -13,6 +13,16 @@ if typing.TYPE_CHECKING:
 
 class RefundService(BaseService):
     def _calc_total_refund(self, sale: "Sale", refund_qty_map: dict[uuid.UUID, int]) -> int:
+        """
+        Calculate the net refund amount for the specified sale line quantities.
+        
+        Parameters:
+        	sale (Sale): Sale containing the lines and sale-level discount.
+        	refund_qty_map (dict[uuid.UUID, int]): Mapping of sale line identifiers to refund quantities.
+        
+        Returns:
+        	int: Net refund amount after applying the proportionally allocated sale-level discount.
+        """
         total_net = sum(
             (line.unit_price - line.discount) * refund_qty_map.get(line.id, 0)
             for line in sale.lines
@@ -29,7 +39,20 @@ class RefundService(BaseService):
         lines_data: list[dict[str, typing.Any]],
     ) -> ServiceResult[Refund]:
         """
-        Creates a refund for a completed sale.
+        Create a refund request for a completed sale.
+        
+        Parameters:
+            processed_by (uuid.UUID): Identifier of the user processing the refund.
+            reason (str): Explanation for the refund.
+            lines_data (list[dict[str, typing.Any]]): Sale lines and quantities to refund.
+        
+        Returns:
+            ServiceResult[Refund]: The created refund request.
+        
+        Raises:
+            SaleNotFoundError: If the sale does not exist.
+            SaleLineNotFoundError: If a requested sale line does not belong to the sale.
+            RefundQuantityExceededError: If a requested quantity exceeds the quantity sold.
         """
         self._authorize(account, "sale", "refund", "create")
         
@@ -94,7 +117,18 @@ class RefundService(BaseService):
             return ServiceResult(data=refund)
 
     def complete_refund(self, account: SupportsPermissionCheck, refund_id: uuid.UUID) -> ServiceResult[Refund]:
-        """Called by event handler when refund payment is successful."""
+        """
+        Mark a refund as successfully processed.
+        
+        Parameters:
+            refund_id (uuid.UUID): Identifier of the refund to complete.
+        
+        Returns:
+            ServiceResult[Refund]: The processed refund.
+        
+        Raises:
+            RefundNotFoundError: If the specified refund does not exist.
+        """
         self._authorize(account, "sale", "refund", "update")
         with self._uow_factory() as uow:
             refund = getattr(uow, "refunds").get(refund_id)
@@ -107,7 +141,15 @@ class RefundService(BaseService):
             return ServiceResult(data=refund)
 
     def fail_refund(self, account: SupportsPermissionCheck, refund_id: uuid.UUID) -> ServiceResult[Refund]:
-        """Called by event handler when refund payment fails."""
+        """
+        Record a failed refund payment.
+        
+        Parameters:
+        	refund_id (uuid.UUID): Identifier of the refund to mark as failed.
+        
+        Returns:
+        	ServiceResult[Refund]: The updated refund.
+        """
         self._authorize(account, "sale", "refund", "update")
         with self._uow_factory() as uow:
             refund = getattr(uow, "refunds").get(refund_id)

@@ -19,6 +19,16 @@ class SqlStockItemRepository(BaseSqlRepository[StockItem, StockItemFilter]):
     filter_cls = StockItemFilter
 
     def _apply_filter(self, query: Select[Any], f: StockItemFilter) -> Select[Any]:
+        """
+        Apply the requested stock item filters and ordering to a query.
+        
+        Parameters:
+        	query (Select[Any]): The query to refine.
+        	f (StockItemFilter): Filter and sorting criteria.
+        
+        Returns:
+        	Select[Any]: The query with the specified filters and ordering applied.
+        """
         if getattr(f, "id", None):
             query = query.where(StockItemModel.id == f.id)
         if getattr(f, "variant_id", None):
@@ -30,6 +40,16 @@ class SqlStockItemRepository(BaseSqlRepository[StockItem, StockItemFilter]):
         return query
 
     def atomic_reserve(self, variant_id: Any, qty: int) -> bool:
+        """
+        Atomically reserve available stock for a variant.
+        
+        Parameters:
+        	variant_id (Any): Identifier of the variant whose stock is reserved.
+        	qty (int): Quantity to reserve.
+        
+        Returns:
+        	bool: `true` if stock was reserved, `false` if insufficient stock or no matching variant exists.
+        """
         from sqlalchemy import update
         
         stmt = (
@@ -42,6 +62,16 @@ class SqlStockItemRepository(BaseSqlRepository[StockItem, StockItemFilter]):
         return result.rowcount > 0
 
     def atomic_release(self, variant_id: Any, qty: int) -> bool:
+        """
+        Release reserved stock for a variant when the reserved quantity is sufficient.
+        
+        Parameters:
+        	variant_id (Any): Identifier of the variant whose reserved stock is reduced.
+        	qty (int): Quantity to release.
+        
+        Returns:
+        	bool: `true` if reserved stock was released, `false` otherwise.
+        """
         from sqlalchemy import update
         
         stmt = (

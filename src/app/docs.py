@@ -1,6 +1,12 @@
 from flask import Flask
 
 def register_openapi(app: Flask) -> None:
+    """
+    Register available OpenAPI definitions and documentation routes with a Flask application.
+    
+    Parameters:
+    	app (Flask): The Flask application to configure. Optional OpenAPI modules that cannot be imported are skipped.
+    """
     try:
         from src.domains.accounts.routes.v1 import openapi as account_openapi
         account_openapi.register()

@@ -17,6 +17,12 @@ from src.core.services.base_service import SupportsPermissionCheck
 @pytest.fixture(scope="session")
 def engine():
     # Use an in-memory SQLite database for tests
+    """
+    Provide an in-memory SQLite engine with all application tables initialized for tests.
+    
+    Yields:
+        Engine: The configured in-memory SQLite engine.
+    """
     engine = create_engine("sqlite:///:memory:")
     # Import ALL domain ORM models to ensure they are registered with metadata
     import src.domains.accounts.repositories.sql.orms  # noqa: F401
@@ -44,6 +50,16 @@ def uow_factory(engine):
 
 @pytest.fixture
 def app(engine, monkeypatch):
+    """
+    Provide a Flask application configured for testing with an in-memory database, fake Redis, and domain event handlers.
+    
+    Parameters:
+        engine: SQLAlchemy engine used for test database sessions.
+        monkeypatch: Pytest monkeypatch fixture used to replace the Redis connection factory.
+    
+    Yields:
+        Flask: The configured test application.
+    """
     import fakeredis
     fake_redis = fakeredis.FakeStrictRedis(decode_responses=True)
     monkeypatch.setattr("redis.from_url", lambda *a, **kw: fake_redis)

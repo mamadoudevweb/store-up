@@ -23,6 +23,18 @@ def build_domain_service(
     dispatcher: EventDispatcher,
     upload_folder: str = "uploads",
 ) -> DomainService:
+    """
+    Assemble the application's domain services with their required dependencies.
+    
+    Parameters:
+        uow_factory (Callable[[], BaseUnitOfWork]): Factory for creating unit-of-work instances.
+        redis_client (redis.Redis[str]): Redis client used by the authentication denylist.
+        dispatcher (EventDispatcher): Event dispatcher used by authentication services.
+        upload_folder (str): Directory used for catalog uploads.
+    
+    Returns:
+        DomainService: The configured collection of domain services.
+    """
     return DomainService(
         accounts=AccountDomainService(uow_factory),
         auth=AuthService(uow_factory, RedisDenylistRepository(redis_client), dispatcher),

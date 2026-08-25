@@ -75,6 +75,9 @@ def test_find_sales(uow_factory):
     seller_id = uuid.uuid4()
     
     def create_sale():
+        """
+        Create a sale for the configured seller with one line item.
+        """
         return Sale.checkout(
             seller_account_id=seller_id,
             payment_method_id=uuid.uuid4(),

@@ -4,6 +4,9 @@ from src.domains.sale.routes.v1.schemas.sale_schemas import (
 )
 
 def register() -> None:
+    """
+    Register the OpenAPI specification for the refund processing endpoint.
+    """
     spec.path(
         path="/api/v1/refunds",
         operations={

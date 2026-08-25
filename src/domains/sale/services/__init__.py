@@ -11,6 +11,12 @@ class SaleDomainService:
     refund: RefundService
     
     def __init__(self, **entity_services: Any) -> None:
+        """
+        Initialize the domain service with dynamically supplied entity services.
+        
+        Parameters:
+            entity_services (Any): Named services to attach to the domain service.
+        """
         self.__dict__.update(entity_services)
 
 

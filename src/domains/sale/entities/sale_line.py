@@ -26,6 +26,20 @@ class SaleLine(BaseEntity[uuid.UUID]):
         unit_price: int,
         discount: int = 0,
     ) -> SaleLine:
+        """
+        Create a sale line with validated pricing and quantity details.
+        
+        Parameters:
+            quantity (int): The number of units in the sale line.
+            unit_price (int): The price per unit.
+            discount (int): The discount applied to each unit.
+        
+        Returns:
+            SaleLine: A new sale line with its discounted subtotal and no refunded units.
+        
+        Raises:
+            ValueError: If quantity is not positive, unit price or discount is negative, or discount exceeds unit price.
+        """
         if quantity <= 0:
             raise ValueError("Sale line quantity must be positive")
         if unit_price < 0:

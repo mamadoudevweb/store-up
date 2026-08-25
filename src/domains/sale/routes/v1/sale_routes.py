@@ -16,6 +16,12 @@ sale_bp = Blueprint("sales", __name__, url_prefix="/api/v1/sales")
 @sale_bp.route("/checkout", methods=["POST"])
 @jwt_required()
 def checkout() -> EnvelopeResponse:
+    """
+    Create a sale from the submitted checkout details.
+    
+    Returns:
+    	EnvelopeResponse: The created sale with HTTP status 201.
+    """
     from flask import request
     data = CheckoutRequest.model_validate(request.get_json())
     domain_service = cast(DomainService, current_app.extensions["domain_service"])
@@ -38,6 +44,14 @@ def checkout() -> EnvelopeResponse:
 @sale_bp.route("/<uuid:sale_id>/complete", methods=["POST"])
 @jwt_required()
 def complete_sale(sale_id: uuid.UUID) -> EnvelopeResponse:
+    """Complete a sale for the current actor.
+    
+    Parameters:
+    	sale_id (uuid.UUID): Identifier of the sale to complete
+    
+    Returns:
+    	EnvelopeResponse: The completed sale response
+    """
     domain_service = cast(DomainService, current_app.extensions["domain_service"])
     actor = get_current_actor()
     
@@ -48,6 +62,14 @@ def complete_sale(sale_id: uuid.UUID) -> EnvelopeResponse:
 @sale_bp.route("/<uuid:sale_id>/fail", methods=["POST"])
 @jwt_required()
 def fail_sale(sale_id: uuid.UUID) -> EnvelopeResponse:
+    """Marks a sale as failed due to a declined payment.
+    
+    Parameters:
+    	sale_id (uuid.UUID): Identifier of the sale to fail.
+    
+    Returns:
+    	EnvelopeResponse: The serialized failed sale response.
+    """
     domain_service = cast(DomainService, current_app.extensions["domain_service"])
     actor = get_current_actor()
     

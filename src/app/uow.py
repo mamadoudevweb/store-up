@@ -58,4 +58,14 @@ REPOSITORY_CLASSES: dict[str, type[Any]] = {
 }
 
 def build_uow_factory(session_factory: Callable[[], Session], dispatcher: EventDispatcher) -> Callable[[], SqlUnitOfWork]:
+    """
+    Create a factory for SQL unit-of-work instances.
+    
+    Parameters:
+    	session_factory (Callable[[], Session]): Factory used to create database sessions.
+    	dispatcher (EventDispatcher): Dispatcher used to publish domain events.
+    
+    Returns:
+    	Callable[[], SqlUnitOfWork]: A zero-argument factory that creates configured SQL unit-of-work instances.
+    """
     return lambda: SqlUnitOfWork(session_factory, dispatcher, REPOSITORY_CLASSES)

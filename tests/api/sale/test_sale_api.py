@@ -7,6 +7,15 @@ from flask_jwt_extended import create_access_token
 
 @pytest.fixture
 def sale_superuser_headers(app):
+    """
+    Create authorization headers for a user with sale and refund permissions.
+    
+    Parameters:
+        app: Application instance providing the domain services and application context.
+    
+    Returns:
+        dict: Headers containing a bearer token for the authorized user.
+    """
     with app.app_context():
         domain_service = app.extensions["domain_service"]
         from tests.conftest import MockActor
@@ -41,6 +50,15 @@ def sale_superuser_headers(app):
 
 @pytest.fixture
 def normal_user_headers(app):
+    """
+    Create authorization headers for a regular user account.
+    
+    Parameters:
+    	app: The application whose context is used to create the account and token.
+    
+    Returns:
+    	dict: Headers containing a bearer token for the regular user account.
+    """
     with app.app_context():
         domain_service = app.extensions["domain_service"]
         acc = domain_service.accounts.account.create_account("Normal", "User").data

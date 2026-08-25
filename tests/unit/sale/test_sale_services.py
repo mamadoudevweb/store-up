@@ -15,6 +15,12 @@ from src.domains.sale.exceptions import (
 
 @pytest.fixture
 def uow_mock():
+    """
+    Create a mock unit of work configured for context-manager usage.
+    
+    Returns:
+    	MagicMock: A mock whose context manager entry returns itself.
+    """
     uow = MagicMock()
     uow.__enter__.return_value = uow
     uow.__exit__.return_value = None
@@ -23,11 +29,24 @@ def uow_mock():
 
 @pytest.fixture
 def uow_factory(uow_mock):
+    """Create a factory that returns the provided unit-of-work mock.
+    
+    Parameters:
+    	uow_mock: The unit-of-work mock to return.
+    
+    Returns:
+    	A callable that returns the provided unit-of-work mock.
+    """
     return lambda: uow_mock
 
 
 @pytest.fixture
 def account_mock():
+    """Create a mocked account whose permission checks succeed.
+    
+    Returns:
+        MagicMock: A mocked account configured to grant requested permissions.
+    """
     account = MagicMock()
     account.has_permission.return_value = True
     return account

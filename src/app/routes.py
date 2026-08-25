@@ -2,6 +2,11 @@ from flask import Flask
 
 def register_routes(app: Flask) -> None:
     # We will import and register the blueprints here after refactoring them
+    """
+    Register the application's account, authentication, RBAC, catalog, sale, refund, and stock blueprints.
+    
+    Blueprints that cannot be imported are skipped, except for the sale and refund blueprints, whose imports are required.
+    """
     try:
         from src.domains.accounts.routes.v1 import router as accounts_v1
         app.register_blueprint(accounts_v1, url_prefix="/api/v1")

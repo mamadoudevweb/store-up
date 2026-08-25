@@ -20,6 +20,20 @@ class RefundLine(BaseEntity[uuid.UUID]):
         sale_line_id: uuid.UUID,
         quantity: int,
     ) -> RefundLine:
+        """
+        Create a refund line for a sale line.
+        
+        Parameters:
+        	refund_id (uuid.UUID): Identifier of the refund.
+        	sale_line_id (uuid.UUID): Identifier of the sale line being refunded.
+        	quantity (int): Number of units to refund.
+        
+        Returns:
+        	RefundLine: A refund line with a generated identifier.
+        
+        Raises:
+        	ValueError: If quantity is less than or equal to zero.
+        """
         if quantity <= 0:
             raise ValueError("Refund line quantity must be positive")
         

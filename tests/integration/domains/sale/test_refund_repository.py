@@ -6,6 +6,9 @@ from src.domains.sale.entities.enums import RefundStatus
 from src.domains.sale.repositories.filters import RefundFilters
 
 def test_add_refund(uow_factory):
+    """
+    Verify that a refund and its line are persisted and retrieved with their expected values.
+    """
     sale_id = uuid.uuid4()
     refund = Refund.create(
         sale_id=sale_id,
@@ -68,6 +71,12 @@ def test_find_refunds(uow_factory):
     sale_id = uuid.uuid4()
     
     def create_refund():
+        """
+        Create a refund with a reason, processor, and one refund line.
+        
+        Returns:
+        	Refund: A newly created refund.
+        """
         return Refund.create(
             sale_id=sale_id,
             processed_by=uuid.uuid4(),
