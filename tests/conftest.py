@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from src.app import create_app
 from src.app.extensions import db
 from src.app.uow import REPOSITORY_CLASSES
+from src.config.testing import TestingConfig
 from src.core.events.dispatcher import EventDispatcher
 from src.core.repositories.sql.sql_uow import SqlUnitOfWork
 from src.core.services.base_service import SupportsPermissionCheck
@@ -17,7 +18,7 @@ from src.core.services.base_service import SupportsPermissionCheck
 @pytest.fixture(scope="session")
 def engine():
     # Use an in-memory SQLite database for tests
-    from src.config.testing import TestingConfig
+    
     engine = create_engine(TestingConfig().DATABASE_URL)
     # Import ALL domain ORM models to ensure they are registered with metadata
     import src.domains.accounts.repositories.sql.orms  # noqa: F401
@@ -45,8 +46,8 @@ def uow_factory(engine):
 
 @pytest.fixture
 def app(engine, monkeypatch):
-    from src.config.testing import TestingConfig
     import redis
+    
     test_redis = redis.from_url(TestingConfig().REDIS_URL, decode_responses=True)
     test_redis.flushdb()
     # Create the Flask app in testing mode
