@@ -44,10 +44,10 @@ def uow_factory(engine):
 
 @pytest.fixture
 def app(engine, monkeypatch):
-    import fakeredis
-    fake_redis = fakeredis.FakeStrictRedis(decode_responses=True)
-    monkeypatch.setattr("redis.from_url", lambda *a, **kw: fake_redis)
-
+    from src.config.testing import TestingConfig
+    import redis
+    test_redis = redis.from_url(TestingConfig().REDIS_URL, decode_responses=True)
+    test_redis.flushdb()
     # Create the Flask app in testing mode
     app = create_app("testing")
     
@@ -59,9 +59,7 @@ def app(engine, monkeypatch):
         return SqlUnitOfWork(session_factory, dispatcher, REPOSITORY_CLASSES)
         
     from src.app.domain_service_builder import build_domain_service
-    import fakeredis
-    fake_redis = fakeredis.FakeStrictRedis(decode_responses=True)
-    test_domain_service = build_domain_service(test_uow_factory, fake_redis, dispatcher)
+    test_domain_service = build_domain_service(test_uow_factory, test_redis, dispatcher)
     app.extensions["domain_service"] = test_domain_service
     
     from src.app import register_domain_event_handlers
