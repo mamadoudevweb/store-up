@@ -37,7 +37,7 @@ def register_permission_docs() -> None:
             "post": {
                 "tags": ["RBAC / Permissions"],
                 "summary": "Create permission",
-                "requestBody": {"content": {"application/json": {"schema": CreatePermissionRequest.model_json_schema()}}},
+                "requestBody": {"required": True, "content": {"application/json": {"schema": CreatePermissionRequest.model_json_schema()}}},
                 "responses": {
                     "201": {
                         "description": "Permission created successfully",

@@ -18,6 +18,7 @@ class LocalDiskStorage:
         ext = os.path.splitext(filename)[1]
         safe_filename = f"{uuid.uuid4().hex}{ext}"
         file_path = os.path.join(self._upload_folder, safe_filename)
+        os.makedirs(self._upload_folder, exist_ok=True)
         with open(file_path, "wb") as f:
             while chunk := stream.read(8192):
                 f.write(chunk)

@@ -15,11 +15,13 @@ from src.core.repositories.sql.sql_uow import SqlUnitOfWork
 from src.core.services.base_service import SupportsPermissionCheck
 
 
+config = TestingConfig()
+
 @pytest.fixture(scope="session")
 def engine():
     # Use an in-memory SQLite database for tests
     
-    engine = create_engine(TestingConfig().DATABASE_URL)
+    engine = create_engine(config.DATABASE_URL)
     # Import ALL domain ORM models to ensure they are registered with metadata
     import src.domains.accounts.repositories.sql.orms  # noqa: F401
     import src.domains.rbac.repositories.sql.orms  # noqa: F401
@@ -47,9 +49,10 @@ def uow_factory(engine):
 @pytest.fixture
 def app(engine, monkeypatch):
     import redis
-    
-    test_redis = redis.from_url(TestingConfig().REDIS_URL, decode_responses=True)
+
+    test_redis = redis.from_url(config.REDIS_URL, decode_responses=True)
     test_redis.flushdb()
+    
     # Create the Flask app in testing mode
     app = create_app("testing")
     

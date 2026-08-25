@@ -17,7 +17,7 @@ def register() -> None:
             "post": {
                 "tags": ["Auth"],
                 "summary": "Login to get access and refresh tokens",
-                "requestBody": {"content": {"application/json": {"schema": LoginRequest.model_json_schema()}}},
+                "requestBody": {"required": True, "content": {"application/json": {"schema": LoginRequest.model_json_schema()}}},
                 "responses": {
                     "200": {
                         "description": "Tokens generated successfully",
