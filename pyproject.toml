@@ -45,7 +45,6 @@ dev = [
     "types-redis>=4.6",
     "httpx>=0.27",
     "factory-boy>=3.3",
-    "fakeredis>=2.23",
 ]
 
 [tool.setuptools.packages.find]

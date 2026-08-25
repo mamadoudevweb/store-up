@@ -20,7 +20,8 @@ config = TestingConfig()
 @pytest.fixture(scope="session")
 def engine():
     # Use an in-memory SQLite database for tests
-    engine = create_engine("sqlite:///:memory:")
+    from src.config.testing import TestingConfig
+    engine = create_engine(TestingConfig().DATABASE_URL)
     # Import ALL domain ORM models to ensure they are registered with metadata
     import src.domains.accounts.repositories.sql.orms  # noqa: F401
     import src.domains.rbac.repositories.sql.orms  # noqa: F401
