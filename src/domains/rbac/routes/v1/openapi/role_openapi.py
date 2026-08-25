@@ -37,7 +37,7 @@ def register_role_docs() -> None:
             "post": {
                 "tags": ["RBAC / Roles"],
                 "summary": "Create role",
-                "requestBody": {"content": {"application/json": {"schema": CreateRoleRequest.model_json_schema()}}},
+                "requestBody": {"required": True, "content": {"application/json": {"schema": CreateRoleRequest.model_json_schema()}}},
                 "responses": {
                     "201": {
                         "description": "Role created successfully",

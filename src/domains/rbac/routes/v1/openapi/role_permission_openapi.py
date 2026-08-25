@@ -31,7 +31,7 @@ def register_role_permission_docs() -> None:
                 "tags": ["RBAC / Roles"],
                 "summary": "Assign permission to role",
                 "parameters": [{"name": "role_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
-                "requestBody": {"content": {"application/json": {"schema": AssignPermissionRequest.model_json_schema()}}},
+                "requestBody": {"required": True, "content": {"application/json": {"schema": AssignPermissionRequest.model_json_schema()}}},
                 "responses": {
                     "201": {"description": "Permission assigned successfully"},
                     **auth_errors,
