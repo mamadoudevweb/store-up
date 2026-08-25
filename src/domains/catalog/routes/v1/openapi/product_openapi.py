@@ -42,7 +42,19 @@ def register_product_docs() -> None:
                 "summary": "Create product",
                 "requestBody": {"content": {"application/json": {"schema": CreateProductRequest.model_json_schema()}}},
                 "responses": {
-                    "201": {"content": {"application/json": {"schema": ProductResponse.model_json_schema()}}},
+                    "201": {
+                        "description": "Product created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": ProductResponse.model_json_schema()
+                                    }
+                                }
+                            }
+                        }
+                    },
                     **auth_errors,
                     **validation_errors
                 },
@@ -58,7 +70,10 @@ def register_product_docs() -> None:
                 "summary": "Get product",
                 "parameters": [{"name": "product_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "responses": {
-                    "200": {"content": {"application/json": {"schema": ProductResponse.model_json_schema()}}},
+                    "200": {
+                        "description": "Product details",
+                        "content": {"application/json": {"schema": ProductResponse.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found
                 },
@@ -69,7 +84,10 @@ def register_product_docs() -> None:
                 "parameters": [{"name": "product_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "requestBody": {"content": {"application/json": {"schema": UpdateProductRequest.model_json_schema()}}},
                 "responses": {
-                    "200": {"content": {"application/json": {"schema": ProductResponse.model_json_schema()}}},
+                    "200": {
+                        "description": "Product updated",
+                        "content": {"application/json": {"schema": ProductResponse.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found,
                     **validation_errors
@@ -97,7 +115,10 @@ def register_product_docs() -> None:
                 "parameters": [{"name": "product_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "requestBody": {"content": {"application/json": {"schema": ChangeStatusRequest.model_json_schema()}}},
                 "responses": {
-                    "200": {"content": {"application/json": {"schema": ProductResponse.model_json_schema()}}},
+                    "200": {
+                        "description": "Product status changed",
+                        "content": {"application/json": {"schema": ProductResponse.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found,
                     **validation_errors
@@ -125,7 +146,10 @@ def register_product_docs() -> None:
                 "parameters": [{"name": "product_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "requestBody": {"content": {"application/json": {"schema": AssignCategoryRequest.model_json_schema()}}},
                 "responses": {
-                    "201": {"content": {"application/json": {"schema": ProductCategoryResponse.model_json_schema()}}},
+                    "201": {
+                        "description": "Category assigned to product",
+                        "content": {"application/json": {"schema": ProductCategoryResponse.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found,
                     **validation_errors
