@@ -20,11 +20,13 @@ class CatalogDomainService:
     Routes reach them via: ``domain_service().catalog.product.create_product(...)``
     """
 
-    def __init__(self, uow_factory: Callable[[], BaseUnitOfWork], upload_folder: str) -> None:
+    from src.core.services.storage import FileStorageService
+
+    def __init__(self, uow_factory: Callable[[], BaseUnitOfWork], storage: FileStorageService) -> None:
         self.product = ProductService(uow_factory)
         self.variant = ProductVariantService(uow_factory)
         self.product_category = ProductCategoryService(uow_factory)
-        self.brand = BrandService(uow_factory, upload_folder)
+        self.brand = BrandService(uow_factory, storage)
         self.category = CategoryService(uow_factory)
-        self.product_image = ProductImageService(uow_factory, upload_folder)
+        self.product_image = ProductImageService(uow_factory, storage)
         self.attribute = AttributeService(uow_factory)
