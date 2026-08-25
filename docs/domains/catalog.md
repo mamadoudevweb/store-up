@@ -42,6 +42,7 @@ erDiagram
 ```
 
 ### Entities
+
 | Entity | Description | Core Attributes |
 |---|---|---|
 | **Product** | The base product definition. | `id`, `name`, `category_id`, `brand_id` |

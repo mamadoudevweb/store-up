@@ -33,6 +33,7 @@ erDiagram
 ```
 
 ### Entities
+
 | Entity | Description | Core Attributes |
 |---|---|---|
 | **Role** | A group of permissions representing a user persona. | `id`, `name`, `description` |

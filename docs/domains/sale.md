@@ -36,6 +36,7 @@ erDiagram
 ```
 
 ### Entities
+
 | Entity | Description | Core Attributes |
 |---|---|---|
 | **Sale** | Represents a customer's order. | `id`, `customer_id`, `total_amount`, `status` |
