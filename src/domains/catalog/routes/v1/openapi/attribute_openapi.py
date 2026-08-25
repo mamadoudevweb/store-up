@@ -38,7 +38,10 @@ def register_attribute_docs() -> None:
                 "summary": "Create attribute",
                 "requestBody": {"content": {"application/json": {"schema": CreateAttributeRequest.model_json_schema()}}},
                 "responses": {
-                    "201": {"content": {"application/json": {"schema": AttributeResponse.model_json_schema()}}},
+                    "201": {
+                        "description": "Attribute created",
+                        "content": {"application/json": {"schema": AttributeResponse.model_json_schema()}}
+                    },
                     **auth_errors,
                     **validation_errors
                 },
@@ -54,7 +57,10 @@ def register_attribute_docs() -> None:
                 "summary": "Get attribute",
                 "parameters": [{"name": "attribute_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "responses": {
-                    "200": {"content": {"application/json": {"schema": AttributeResponse.model_json_schema()}}},
+                    "200": {
+                        "description": "Attribute details",
+                        "content": {"application/json": {"schema": AttributeResponse.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found
                 },
@@ -81,7 +87,10 @@ def register_attribute_docs() -> None:
                 "parameters": [{"name": "attribute_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
                 "requestBody": {"content": {"application/json": {"schema": CreateAttributeValueRequest.model_json_schema()}}},
                 "responses": {
-                    "201": {"content": {"application/json": {"schema": AttributeValueResponse.model_json_schema()}}},
+                    "201": {
+                        "description": "Attribute value created",
+                        "content": {"application/json": {"schema": AttributeValueResponse.model_json_schema()}}
+                    },
                     **auth_errors,
                     **not_found,
                     **validation_errors
