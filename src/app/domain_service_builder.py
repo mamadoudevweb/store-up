@@ -15,6 +15,7 @@ from src.domains.stock.services import StockDomainService
 from src.domains.stock.services.stock_item_service import StockItemService
 from src.domains.stock.services.stock_movement_service import StockMovementService
 from src.domains.sale.services import SaleDomainService, SaleService, RefundService
+from src.core.services.storage import LocalDiskStorage
 
 
 def build_domain_service(
@@ -27,7 +28,7 @@ def build_domain_service(
         accounts=AccountDomainService(uow_factory),
         auth=AuthService(uow_factory, RedisDenylistRepository(redis_client), dispatcher),
         rbac=RbacDomainService(uow_factory),
-        catalog=CatalogDomainService(uow_factory, upload_folder),
+        catalog=CatalogDomainService(uow_factory, LocalDiskStorage(upload_folder)),
         stock=StockDomainService(
             item=StockItemService(uow_factory),
             movement=StockMovementService(uow_factory),

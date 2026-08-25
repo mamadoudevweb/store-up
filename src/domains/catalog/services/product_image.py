@@ -1,13 +1,13 @@
 """ProductImage service — images now belong to ProductVariant."""
 from __future__ import annotations
 
-import os
 import uuid
 from typing import BinaryIO, Callable
 
 from src.core.repositories.base_uow import BaseUnitOfWork
 from src.core.services.base_service import BaseService, SupportsPermissionCheck
 from src.core.services.result import ServiceResult
+from src.core.services.storage import FileStorageService
 from src.core.entities.pagination import Pagination
 from src.domains.catalog.entities import ProductImage
 from src.domains.catalog.exceptions import ProductImageNotFound, ProductVariantNotFound
@@ -15,26 +15,10 @@ from src.domains.catalog.repositories.filters import ProductImageFilter, Product
 
 
 class ProductImageService(BaseService):
-    def __init__(self, uow_factory: Callable[[], BaseUnitOfWork], upload_folder: str) -> None:
+
+    def __init__(self, uow_factory: Callable[[], BaseUnitOfWork], storage: FileStorageService) -> None:
         super().__init__(uow_factory)
-        self._upload_folder = upload_folder
-
-    def _save_file(self, filename: str, file_stream: BinaryIO) -> str:
-        os.makedirs(self._upload_folder, exist_ok=True)
-        ext = os.path.splitext(filename)[1]
-        safe_filename = f"{uuid.uuid4().hex}{ext}"
-        file_path = os.path.join(self._upload_folder, safe_filename)
-        with open(file_path, "wb") as f:
-            f.write(file_stream.read())
-        return safe_filename
-
-    def _delete_file(self, filename: str) -> None:
-        full_path = os.path.join(self._upload_folder, filename)
-        if os.path.exists(full_path):
-            try:
-                os.remove(full_path)
-            except OSError:
-                pass
+        self.storage = storage
 
     def upload_image(
         self,
@@ -48,7 +32,7 @@ class ProductImageService(BaseService):
         with self._uow_factory() as uow:
             if uow.product_variants.get(ProductVariantFilter(id=variant_id)) is None:
                 raise ProductVariantNotFound()
-            safe_filename = self._save_file(filename, file_stream)
+            safe_filename = self.storage.save(filename, file_stream)
             image = ProductImage.add(variant_id=variant_id, file_path=safe_filename, order=order)
             image = uow.product_images.add(image)
             uow.track(image)
@@ -103,6 +87,6 @@ class ProductImageService(BaseService):
                 raise ProductImageNotFound()
             image.remove()
             uow.track(image)
-            self._delete_file(image.file_path)
+            self.storage.delete(image.file_path)
             uow.product_images.delete(image)
         return ServiceResult(data=None)

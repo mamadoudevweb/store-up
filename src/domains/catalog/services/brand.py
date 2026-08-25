@@ -1,13 +1,14 @@
 """Brand service."""
 from __future__ import annotations
 
-import os
+
 import uuid
 from typing import BinaryIO, Callable
 
 from src.core.repositories.base_uow import BaseUnitOfWork
 from src.core.services.base_service import BaseService, SupportsPermissionCheck
 from src.core.services.result import ServiceResult
+from src.core.services.storage import FileStorageService
 from src.core.entities.pagination import Pagination
 from src.domains.catalog.entities import Brand
 from src.domains.catalog.exceptions import BrandNotFound
@@ -15,9 +16,10 @@ from src.domains.catalog.repositories.filters import BrandFilter
 
 
 class BrandService(BaseService):
-    def __init__(self, uow_factory: Callable[[], BaseUnitOfWork], upload_folder: str) -> None:
+
+    def __init__(self, uow_factory: Callable[[], BaseUnitOfWork], storage: FileStorageService) -> None:
         super().__init__(uow_factory)
-        self._upload_folder = upload_folder
+        self.storage = storage
 
     def create_brand(
         self,
@@ -91,21 +93,10 @@ class BrandService(BaseService):
             if brand is None:
                 raise BrandNotFound()
 
-            os.makedirs(self._upload_folder, exist_ok=True)
-            ext = os.path.splitext(filename)[1]
-            safe_filename = f"{uuid.uuid4().hex}{ext}"
-            file_path = os.path.join(self._upload_folder, safe_filename)
+            safe_filename = self.storage.save(filename, file_stream)
 
-            with open(file_path, "wb") as f:
-                f.write(file_stream.read())
-
-            if brand.logo_path and os.path.exists(
-                os.path.join(self._upload_folder, brand.logo_path)
-            ):
-                try:
-                    os.remove(os.path.join(self._upload_folder, brand.logo_path))
-                except OSError:
-                    pass
+            if brand.logo_path:
+                self.storage.delete(brand.logo_path)
 
             brand.logo_path = safe_filename
             brand = uow.brands.update(brand)
@@ -121,12 +112,7 @@ class BrandService(BaseService):
                 raise BrandNotFound()
 
             if brand.logo_path:
-                full_path = os.path.join(self._upload_folder, brand.logo_path)
-                if os.path.exists(full_path):
-                    try:
-                        os.remove(full_path)
-                    except OSError:
-                        pass
+                self.storage.delete(brand.logo_path)
                 brand.logo_path = None
                 brand = uow.brands.update(brand)
         return ServiceResult(data=brand)
