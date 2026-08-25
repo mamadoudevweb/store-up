@@ -23,6 +23,9 @@ from src.domains.catalog.repositories.sql.attribute_repository import SqlAttribu
 # Stock
 from src.domains.stock.repositories.sql.stock_item_repository import SqlStockItemRepository
 from src.domains.stock.repositories.sql.stock_movement_repository import SqlStockMovementRepository
+# Sale
+from src.domains.sale.repositories.sql.sale_repository import SqlSaleRepository
+from src.domains.sale.repositories.sql.refund_repository import SqlRefundRepository
 
 REPOSITORY_CLASSES: dict[str, type[Any]] = {
     # Account domain
@@ -48,6 +51,10 @@ REPOSITORY_CLASSES: dict[str, type[Any]] = {
     # Stock domain
     "stock_items": SqlStockItemRepository,
     "stock_movements": SqlStockMovementRepository,
+    
+    # Sale domain
+    "sales": SqlSaleRepository,
+    "refunds": SqlRefundRepository,
 }
 
 def build_uow_factory(session_factory: Callable[[], Session], dispatcher: EventDispatcher) -> Callable[[], SqlUnitOfWork]:

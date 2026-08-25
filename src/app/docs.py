@@ -18,5 +18,11 @@ def register_openapi(app: Flask) -> None:
     except ImportError:
         pass
         
+    try:
+        from src.domains.sale.routes.v1 import openapi as sale_openapi
+        sale_openapi.register()
+    except ImportError:
+        pass
+        
     from src.core.docs.docs_blueprint import bp as docs_bp
     app.register_blueprint(docs_bp)

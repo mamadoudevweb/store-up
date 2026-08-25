@@ -26,6 +26,11 @@ def register_routes(app: Flask) -> None:
     except ImportError:
         pass
 
+    from src.domains.sale.routes.v1.sale_routes import sale_bp
+    from src.domains.sale.routes.v1.refund_routes import refund_bp
+    app.register_blueprint(sale_bp)
+    app.register_blueprint(refund_bp)
+
     try:
         from src.domains.stock.routes.v1 import router as stock_router
         app.register_blueprint(stock_router, url_prefix="/api/v1/stock")

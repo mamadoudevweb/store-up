@@ -18,10 +18,13 @@ from src.core.services.base_service import SupportsPermissionCheck
 def engine():
     # Use an in-memory SQLite database for tests
     engine = create_engine("sqlite:///:memory:")
-    # Import all models to ensure they are registered with metadata
-    from src.domains.accounts.repositories.sql.orms import account_model, account_role_model, credential_model
-    from src.domains.rbac.repositories.sql.orms import permission_model, role_model, role_permission_model
-    
+    # Import ALL domain ORM models to ensure they are registered with metadata
+    import src.domains.accounts.repositories.sql.orms  # noqa: F401
+    import src.domains.rbac.repositories.sql.orms  # noqa: F401
+    import src.domains.catalog.repositories.sql.orms  # noqa: F401
+    import src.domains.stock.repositories.sql.orms  # noqa: F401
+    import src.domains.sale.repositories.sql.orms  # noqa: F401
+
     db.Model.metadata.create_all(engine)
     yield engine
     engine.dispose()
@@ -58,7 +61,11 @@ def app(engine, monkeypatch):
     from src.app.domain_service_builder import build_domain_service
     import fakeredis
     fake_redis = fakeredis.FakeStrictRedis(decode_responses=True)
-    app.extensions["domain_service"] = build_domain_service(test_uow_factory, fake_redis, dispatcher)
+    test_domain_service = build_domain_service(test_uow_factory, fake_redis, dispatcher)
+    app.extensions["domain_service"] = test_domain_service
+    
+    from src.app import register_domain_event_handlers
+    register_domain_event_handlers(dispatcher, test_domain_service)
     
     yield app
 
