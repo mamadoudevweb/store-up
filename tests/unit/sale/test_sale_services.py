@@ -306,6 +306,8 @@ def test_request_refund_sale_not_found(uow_mock, uow_factory, account_mock):
 
 def test_request_refund_sale_line_not_found(uow_mock, uow_factory, account_mock):
     sale = MagicMock()
+    sale.subtotal = 100
+    sale.discount = 0
     sale.lines = []
     uow_mock.sales.get.return_value = sale
 
@@ -323,6 +325,8 @@ def test_request_refund_sale_line_not_found(uow_mock, uow_factory, account_mock)
 
 def test_request_refund_quantity_exceeded(uow_mock, uow_factory, account_mock):
     sale = MagicMock()
+    sale.subtotal = 100
+    sale.discount = 0
     sale_line = MagicMock()
     sale_line.id = uuid.uuid4()
     sale_line.quantity = 2
