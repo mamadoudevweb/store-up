@@ -30,7 +30,34 @@ def register_role_docs() -> None:
                     {"name": "name", "in": "query", "schema": {"type": "string"}},
                 ],
                 "responses": {
-                    "200": {"description": "Paginated list of roles"},
+                    "200": {
+                        "description": "Paginated list of roles",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["success", "data", "error", "meta"],
+                                    "properties": {
+                                        "success": {"type": "boolean", "example": True},
+                                        "data": {
+                                            "type": "array",
+                                            "items": RoleResponse.model_json_schema(),
+                                        },
+                                        "error": {"type": "object", "nullable": True},
+                                        "meta": {
+                                            "type": "object",
+                                            "required": ["page", "limit", "total"],
+                                            "properties": {
+                                                "page": {"type": "integer"},
+                                                "limit": {"type": "integer"},
+                                                "total": {"type": "integer"},
+                                            },
+                                        },
+                                    },
+                                }
+                            }
+                        },
+                    },
                     **auth_errors
                 },
             },
@@ -52,6 +79,7 @@ def register_role_docs() -> None:
                             }
                         }
                     },
+                    "409": {"description": "Role with the same name already exists"},
                     **auth_errors,
                     **validation_errors
                 },

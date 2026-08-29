@@ -212,7 +212,18 @@ def test_sale_process_refund_from_completed(sample_sale_lines):
         line.refunded_quantity = line.quantity
 
     refund_id = uuid.uuid4()
-    sale.process_refund(refund_id=refund_id, amount=150, refund_lines=[])
+    refunded_variant_id = sale.lines[0].variant_id
+    sale.process_refund(
+        refund_id=refund_id,
+        amount=150,
+        refund_lines=[
+            {
+                "sale_line_id": sale.lines[0].id,
+                "variant_id": refunded_variant_id,
+                "quantity": 2,
+            }
+        ],
+    )
 
     assert sale.status == SaleStatus.RETURNED
     assert sale.returned_at is not None
@@ -220,6 +231,9 @@ def test_sale_process_refund_from_completed(sample_sale_lines):
     from src.domains.sale.events import SaleReturned, RefundCompleted
     assert len(sale._events) == 2
     assert isinstance(sale._events[0], RefundCompleted)
+    assert sale._events[0].lines == [
+        {"variant_id": refunded_variant_id, "quantity": 2}
+    ]
     event = sale._events[1]
     assert isinstance(event, SaleReturned)
     assert event.refund_id == refund_id

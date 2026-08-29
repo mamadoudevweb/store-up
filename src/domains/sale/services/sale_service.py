@@ -102,6 +102,7 @@ class SaleService(BaseService):
                 aggregated_requests[sale_line_id] = aggregated_requests.get(sale_line_id, 0) + line_data["quantity"]
 
             # Increment refunded_quantity for each line after revalidation
+            refund_lines: list[dict[str, typing.Any]] = []
             for sale_line_id, quantity in aggregated_requests.items():
                 sale_line = next((sl for sl in sale.lines if str(sl.id) == str(sale_line_id)), None)
                 if sale_line:
@@ -109,8 +110,11 @@ class SaleService(BaseService):
                         from src.domains.sale.exceptions import RefundQuantityExceededError
                         raise RefundQuantityExceededError(f"Cannot refund more than sold for line {sale_line_id}")
                     sale_line.refunded_quantity += quantity
+                    refund_lines.append(
+                        {"variant_id": sale_line.variant_id, "quantity": quantity}
+                    )
 
-            sale.process_refund(refund_id=refund_id, amount=amount, refund_lines=lines_data)
+            sale.process_refund(refund_id=refund_id, amount=amount, refund_lines=refund_lines)
             
             getattr(uow, "sales").update(sale)
             uow.track(sale)

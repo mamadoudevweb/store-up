@@ -115,7 +115,10 @@ class Sale(BaseEntity[uuid.UUID]):
             RefundCompleted(
                 refund_id=refund_id,
                 sale_id=self.id,
-                lines=refund_lines,
+                lines=[
+                    {"variant_id": line["variant_id"], "quantity": line["quantity"]}
+                    for line in refund_lines
+                ],
             )
         )
         
@@ -130,4 +133,3 @@ class Sale(BaseEntity[uuid.UUID]):
                     amount=amount,
                 )
             )
-

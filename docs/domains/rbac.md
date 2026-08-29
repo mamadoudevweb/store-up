@@ -120,7 +120,7 @@ sequenceDiagram
   - `limit` (integer, default: 20)
   - `name` (string, optional)
 - **Responses:**
-  - **`200 OK`**: Returns a paginated list of `RoleResponse`.
+  - **`200 OK`**: Returns `{ success: true, data: RoleResponse[], error: null, meta: { page: integer, limit: integer, total: integer } }`.
 
 #### `GET /api/v1/roles/<uuid>`
 - **Use Case:** Fetching details of a specific role.

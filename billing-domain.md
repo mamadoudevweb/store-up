@@ -21,7 +21,7 @@ Small, fixed, pre-registered lookup — not a per-customer wallet (no customer a
 
 ```python
 class ProcessorResult:
-    status: Literal["captured", "failed", "pending"]
+    status: Literal["captured", "processed", "failed", "pending"]
     processor_reference: str | None
     failure_reason: str | None
 
@@ -112,7 +112,7 @@ This is the one place Billing's design reaches back and changes something alread
 
 Billing does **not** react to `SaleCreated` directly.
 
-```
+```text
 SaleCreated
   → Stock attempts atomic reservation
       success → StockReserved(sale_id)              → Billing attempts capture
@@ -124,9 +124,11 @@ Chosen specifically so a stock failure never requires reversing an already-captu
 
 ---
 
-## 6. Refunds: restock and status move together, at settlement completion
+## 6. Refunds: settlement-gated, eventually consistent reactions
 
-Both `Sale`/`Refund` status flip and the actual stock increase happen atomically, triggered by `RefundProcessed` — never split across two moments (resolves the inconsistency risk of restocking and status-flipping at different times).
+Billing emits `RefundProcessed` only after settlement completes. Sale consumes it, updates `Refund` and (when fully refunded) `Sale`, then emits `RefundCompleted`. Stock consumes `RefundCompleted` and increases inventory. These are separate local transactions and are **eventually consistent**; no cross-domain atomicity is claimed.
+
+Event delivery is retried after a handler failure. Sale must handle duplicate `RefundProcessed` deliveries idempotently so quantities and statuses change at most once for a settlement. If Stock restoration fails, `RefundCompleted` is retried until it succeeds; Stock must deduplicate by `refund_id` and line/variant so a retry cannot increase inventory twice.
 
 **Accepted gap, on purpose:** between a physical return and `RefundProcessed` firing — and indefinitely, if settlement fails and isn't manually retried — the system shows the item as sold while it's physically back on the shelf. Acceptable for a single-shop setting where a cashier can just look at the shelf, and where Cash (the only real processor today) never fails. Revisit once Card/Mobile ship and refund declines become a real, recurring case rather than a theoretical one.
 

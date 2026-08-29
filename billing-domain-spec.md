@@ -90,7 +90,7 @@ Billing owns payment authorization and refund settlement for Sale. It is the onl
 
 ### 5.1 Payment (per row — the ledger, not the Sale, has the state machine)
 
-```
+```text
         capture() / retry_payment()
               │
               ▼
@@ -122,6 +122,7 @@ Each method's precondition is checked and enforced *before* any processor call �
 - **Postcondition:** one new `Payment` row, `attempt_number` = previous + 1, optionally a different `payment_method_id`.
 
 ### 6.3 `settle_refund(refund_id, payment_id, amount) -> RefundSettlement`
+- **Precondition:** `amount > 0`. Zero and negative amounts are validation failures: no `RefundSettlement` row is created and the processor is not called.
 - **Precondition:** `amount` does not exceed the remaining unsettled amount for `refund_id` (sum of prior `processed` settlements for this `refund_id` + this `amount` ≤ the `Refund`'s total, as reported in the triggering event's payload — Billing does not independently query Sale's tables to verify this, only trusts the event payload, per the domain-isolation rule).
 - **Postcondition:** one new `RefundSettlement` row, reversed through `payment_id`'s `processor_key` — **never** a different processor than the one that captured the original payment (§4.3).
 
@@ -154,7 +155,7 @@ Full contracts already defined in `event-catalog.md` §2.3, §3 — restated her
 | `RefundProcessed` | `RefundSettlement.status → processed` |
 | `RefundFailed` | `RefundSettlement.status → failed` |
 
-**Versioning:** every event carries `event_version` per the architecture standard's envelope (`flask-api-architecture-standard.md` §5). A breaking change to any of these four payloads is a new version, never a mutation of the existing one — Sale (the sole consumer) must be able to run against either version during a rollout.
+**Versioning:** every event carries `event_version` per the architecture standard's envelope (`flask-api-architecture-standard.md` §5). A breaking change to any of these four payloads is a new version, never a mutation of the existing one. `PaymentCaptured` is consumed by both Sale and Stock; during a rollout, Sale must be able to run against either event version, and Stock's consumer must be upgraded compatibly.
 
 ---
 
@@ -167,7 +168,7 @@ Billing's schema contains **no field capable of holding a primary account number
 Processor API credentials are configuration, sourced from the environment per the established `pydantic-settings` pattern (`flask-api-architecture-standard.md` §9) — never hardcoded, never logged, never stored in `Payment`/`RefundSettlement` rows.
 
 ### 9.3 PII minimization
-Billing references `sale_id` only — it never stores `customer_name` or any other customer-identifying field from Sale. Its PII footprint is, by construction, empty.
+Billing does not copy `customer_name` or any other directly identifying Sale field. However, `Payment.sale_id` can be joined to `Sale.customer_name`, so Billing has an indirect, pseudonymous PII footprint. Treat `sale_id` as personal data: expose it only to the Billing service and authorized finance/compliance operators, audit administrative access, and retain it only under §13.
 
 ---
 
@@ -214,7 +215,11 @@ Following the project-wide `AppError` pattern (self-registering by `code`, `<DOM
 
 ## 13. Data retention & auditability
 
-`Payment` and `RefundSettlement` rows are **never deleted, soft or hard**, once created — this differs deliberately from the earlier Permission decision (no soft delete because deletion there means real removal of a no-longer-needed row). Here, the reasoning is the opposite: every financial record must be permanently retrievable for audit, dispute, and accounting purposes. If this domain ever needs a "hide old records from the UI" feature, that's a query-layer/archival concern, not a deletion capability — the rows themselves are permanent.
+`Payment` and `RefundSettlement` rows follow a seven-year retention schedule measured from `resolved_at` (or from formal closure for an attempt that never resolves). Keep them in the operational database for two years, then move them to encrypted, access-logged archival storage for the remaining five years. At the end of seven years, erase the rows and associated links such as `sale_id`.
+
+An applicable financial-record law, unresolved dispute, audit, or legal hold may require longer retention. Such records must be isolated in the restricted archive, accessible only to authorized finance/compliance operators, and erased when the documented obligation expires. Shorter erasure required by applicable privacy law takes precedence where no financial-record obligation applies.
+
+**Privacy-owner confirmation:** Pending. Record the approver and approval date here before this draft advances to production implementation; jurisdiction-specific retention overrides must be recorded with that approval.
 
 ---
 
