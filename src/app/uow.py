@@ -27,6 +27,11 @@ from src.domains.stock.repositories.sql.stock_movement_repository import SqlStoc
 from src.domains.sale.repositories.sql.sale_repository import SqlSaleRepository
 from src.domains.sale.repositories.sql.refund_repository import SqlRefundRepository
 
+# Billing
+from src.domains.billing.repositories.sql.payment_repository import SqlPaymentRepository
+from src.domains.billing.repositories.sql.payment_method_repository import SqlPaymentMethodRepository
+from src.domains.billing.repositories.sql.refund_settlement_repository import SqlRefundSettlementRepository
+
 REPOSITORY_CLASSES: dict[str, type[Any]] = {
     # Account domain
     "accounts": SqlAccountRepository,
@@ -55,6 +60,11 @@ REPOSITORY_CLASSES: dict[str, type[Any]] = {
     # Sale domain
     "sales": SqlSaleRepository,
     "refunds": SqlRefundRepository,
+
+    # Billing domain
+    "payments": SqlPaymentRepository,
+    "payment_methods": SqlPaymentMethodRepository,
+    "refund_settlements": SqlRefundSettlementRepository,
 }
 
 def build_uow_factory(session_factory: Callable[[], Session], dispatcher: EventDispatcher) -> Callable[[], SqlUnitOfWork]:

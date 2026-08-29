@@ -15,6 +15,9 @@ from src.domains.stock.services import StockDomainService
 from src.domains.stock.services.stock_item_service import StockItemService
 from src.domains.stock.services.stock_movement_service import StockMovementService
 from src.domains.sale.services import SaleDomainService, SaleService, RefundService
+from src.domains.billing.services import BillingDomainService
+from src.domains.billing.services.payment_service import PaymentService
+from src.domains.billing.services.payment_method_service import PaymentMethodService
 from src.core.services.storage import LocalDiskStorage
 
 
@@ -36,5 +39,9 @@ def build_domain_service(
         sale=SaleDomainService(
             sale=SaleService(uow_factory),
             refund=RefundService(uow_factory),
+        ),
+        billing=BillingDomainService(
+            payment=PaymentService(uow_factory),
+            payment_method=PaymentMethodService(uow_factory),
         ),
     )

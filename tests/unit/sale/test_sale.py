@@ -208,15 +208,19 @@ def test_sale_process_refund_from_completed(sample_sale_lines):
     sale.mark_completed()
     sale._events.clear()
 
+    for line in sale.lines:
+        line.refunded_quantity = line.quantity
+
     refund_id = uuid.uuid4()
-    sale.process_refund(refund_id=refund_id, amount=150)
+    sale.process_refund(refund_id=refund_id, amount=150, refund_lines=[])
 
     assert sale.status == SaleStatus.RETURNED
     assert sale.returned_at is not None
 
-    from src.domains.sale.events import SaleReturned
-    assert len(sale._events) == 1
-    event = sale._events[0]
+    from src.domains.sale.events import SaleReturned, RefundCompleted
+    assert len(sale._events) == 2
+    assert isinstance(sale._events[0], RefundCompleted)
+    event = sale._events[1]
     assert isinstance(event, SaleReturned)
     assert event.refund_id == refund_id
     assert event.sale_id == sale.id
@@ -232,10 +236,12 @@ def test_sale_process_refund_from_returned_is_allowed(sample_sale_lines):
         lines=sample_sale_lines,
     )
     sale.mark_completed()
-    sale.process_refund(refund_id=uuid.uuid4(), amount=100)
+    for line in sale.lines:
+        line.refunded_quantity = line.quantity
+    sale.process_refund(refund_id=uuid.uuid4(), amount=100, refund_lines=[])
 
     # Should not raise
-    sale.process_refund(refund_id=uuid.uuid4(), amount=50)
+    sale.process_refund(refund_id=uuid.uuid4(), amount=50, refund_lines=[])
     assert sale.status == SaleStatus.RETURNED
 
 
@@ -247,7 +253,7 @@ def test_sale_process_refund_from_pending_raises(sample_sale_lines):
     )
 
     with pytest.raises(InvalidSaleStateError, match="Sale must be completed to process a refund"):
-        sale.process_refund(refund_id=uuid.uuid4(), amount=50)
+        sale.process_refund(refund_id=uuid.uuid4(), amount=50, refund_lines=[])
 
 
 def test_sale_process_refund_from_failed_raises(sample_sale_lines):
@@ -259,7 +265,7 @@ def test_sale_process_refund_from_failed_raises(sample_sale_lines):
     sale.mark_failed("Payment declined")
 
     with pytest.raises(InvalidSaleStateError, match="Sale must be completed to process a refund"):
-        sale.process_refund(refund_id=uuid.uuid4(), amount=50)
+        sale.process_refund(refund_id=uuid.uuid4(), amount=50, refund_lines=[])
 
 
 @pytest.mark.parametrize("quantity", [0, -1])

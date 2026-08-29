@@ -35,6 +35,16 @@ class StockReserved(DomainEvent):
 
 
 @dataclass(frozen=True)
+class StockReservationFailed(DomainEvent):
+    """Emitted when stock reservation fails (e.g. insufficient quantity)."""
+    variant_id: uuid.UUID
+    quantity: int
+    reference_type: ReferenceType
+    reference_id: str | None
+    reason: str
+
+
+@dataclass(frozen=True)
 class StockReleased(DomainEvent):
     """Emitted when reserved stock is released back (e.g. order cancelled)."""
     stock_item_id: uuid.UUID

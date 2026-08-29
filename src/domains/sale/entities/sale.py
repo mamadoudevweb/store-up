@@ -103,19 +103,30 @@ class Sale(BaseEntity[uuid.UUID]):
         self.failed_at = datetime.now(timezone.utc)
         self.register_event(SaleFailed(sale_id=self.id))
 
-    def process_refund(self, refund_id: uuid.UUID, amount: int) -> None:
+    def process_refund(self, refund_id: uuid.UUID, amount: int, refund_lines: list[dict[str, typing.Any]]) -> None:
         if self.status not in (SaleStatus.COMPLETED, SaleStatus.RETURNED):
             raise InvalidSaleStateError("Sale must be completed to process a refund")
             
         from datetime import datetime, timezone
+        from src.domains.sale.events import RefundCompleted, SaleReturned
         
-        self.status = SaleStatus.RETURNED
-        self.returned_at = datetime.now(timezone.utc)
         self.register_event(
-            SaleReturned(
+            RefundCompleted(
                 refund_id=refund_id,
                 sale_id=self.id,
-                amount=amount,
+                lines=refund_lines,
             )
         )
+        
+        all_refunded = all(line.refunded_quantity == line.quantity for line in self.lines)
+        if all_refunded and self.status != SaleStatus.RETURNED:
+            self.status = SaleStatus.RETURNED
+            self.returned_at = datetime.now(timezone.utc)
+            self.register_event(
+                SaleReturned(
+                    refund_id=refund_id,
+                    sale_id=self.id,
+                    amount=amount,
+                )
+            )
 

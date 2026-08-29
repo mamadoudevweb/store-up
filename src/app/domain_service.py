@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from src.domains.rbac.services import RbacDomainService
     from src.domains.accounts.services import AccountDomainService
     from src.domains.auth.services.auth import AuthService
+    from src.domains.billing.services import BillingDomainService
 
 class DomainService:
     """Aggregates every domain's DomainService. core/ and this class don't
@@ -20,6 +21,7 @@ class DomainService:
         rbac: RbacDomainService
         accounts: AccountDomainService
         auth: AuthService
+        billing: BillingDomainService
 
     def __init__(self, **domains: Any) -> None:
         self.__dict__.update(domains)
