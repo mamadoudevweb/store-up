@@ -42,6 +42,8 @@ erDiagram
 
 ## Events
 
+The RBAC domain emits the following events when mutations occur:
+
 ```mermaid
 flowchart LR
     R[RBAC Domain] -->|RoleCreated| EB((Event Bus))
@@ -57,7 +59,12 @@ flowchart LR
 - `RolePermissionAssigned(role_id, permission_id)`
 - `RolePermissionRevoked(role_id, permission_id)`
 
+### Subscribed Events
+*The RBAC domain does not currently subscribe to events from other domains.*
+
 ## Services & Business Logic
+
+The domain logic is split across three entity-specific services:
 
 ### Assignment Sequence
 This flow demonstrates how a Role is assigned a new Permission.
