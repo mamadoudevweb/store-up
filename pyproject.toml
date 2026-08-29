@@ -81,3 +81,9 @@ pythonpath = "."
 [tool.coverage.run]
 source = ["src"]
 omit = ["src/domains/*/routes/v1/schemas/*"]
+
+[dependency-groups]
+dev = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.7",
+]

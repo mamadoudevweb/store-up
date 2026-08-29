@@ -1,0 +1,26 @@
+site_name: Store-Up Documentation
+site_description: API and Architecture Documentation for Store-Up
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: blue
+    accent: blue
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Domains:
+    - Accounts: domains/accounts.md
+    - Auth: domains/auth.md
+    - Catalog: domains/catalog.md
+    - RBAC: domains/rbac.md
+    - Sale: domains/sale.md
+    - Stock: domains/stock.md
