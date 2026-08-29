@@ -24,3 +24,10 @@ nav:
     - RBAC: domains/rbac.md
     - Sale: domains/sale.md
     - Stock: domains/stock.md
+
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
