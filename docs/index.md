@@ -1,14 +1,28 @@
-# Store-Up Documentation
+# Store-Up Architecture & API Documentation
 
-Welcome to the internal technical documentation for **Store-Up**!
+Welcome to the internal technical documentation for **Store-Up**! 
 
-This site serves as the single source of truth for the API specifications and the architectural design of the various domains within the application.
+This site serves as the single source of truth for the API specifications, data models, and event-driven architectural design of the various domains within the application.
 
-## Overview
+## Architecture Overview
 
-Store-Up is built using a domain-driven architecture on top of Flask and SQLAlchemy. 
+Store-Up is built using a strict **Domain-Driven Design (DDD)** architecture on top of Flask and SQLAlchemy. 
+The codebase is structured to ensure domains are decoupled, communicating asynchronously through an Event Bus when cross-domain reactions are necessary.
 
-Explore the domains on the left or use the search bar to find exactly what you are looking for.
+- **Entities**: Pure Python dataclasses representing business concepts.
+- **Repositories**: SQL-backed stores interacting with a generic Unit of Work.
+- **Services**: Business logic orchestrators enforcing authorization and emitting domain events.
+- **Routes**: Thin HTTP layers utilizing Pydantic schemas for strict request/response validation.
 
-### Getting Started
-- Explore the **[Accounts Domain](domains/accounts.md)** to see an example of our detailed API endpoint documentation!
+## Domains
+
+Explore the documentation for each of our bounded contexts:
+
+- **[Accounts](domains/accounts.md)**: User identity, profile management, credentials, and role associations.
+- **[RBAC](domains/rbac.md)**: Role-Based Access Control, managing the granular permissions available in the system.
+- **[Auth](domains/auth.md)**: Authentication token issuance and lifecycle management.
+- **[Catalog](domains/catalog.md)**: Product and category management.
+- **[Stock](domains/stock.md)**: Inventory tracking and stock movements.
+- **[Sale](domains/sale.md)**: Point-of-sale transactions and checkout processing.
+
+*(Note: The Billing domain is currently under active development.)*
