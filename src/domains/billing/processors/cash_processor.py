@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import uuid
 from typing import ClassVar
+from src.domains.billing.processors import PaymentProcessor, ProcessorResult
 
 
-class CashProcessor:
+class CashProcessor(PaymentProcessor):
     """Handles cash payments. No external gateway, no async, no failure modes."""
     key: ClassVar[str] = "cash_manual"
 
@@ -19,8 +20,7 @@ class CashProcessor:
         *,
         amount: int,
         payment_id: uuid.UUID,
-    ) -> "ProcessorResult":  # type: ignore[name-defined]  # avoid circular at class body
-        from src.domains.billing.processors import ProcessorResult
+    ) -> ProcessorResult:
         return ProcessorResult(
             status="captured",
             processor_reference=None,
@@ -33,8 +33,7 @@ class CashProcessor:
         amount: int,
         original_reference: str | None,
         refund_id: uuid.UUID,
-    ) -> "ProcessorResult":  # type: ignore[name-defined]
-        from src.domains.billing.processors import ProcessorResult
+    ) -> ProcessorResult:
         return ProcessorResult(
             status="processed",
             processor_reference=None,

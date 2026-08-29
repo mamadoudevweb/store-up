@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 from src.core.entities.base_entity import BaseEntity
 from src.domains.sale.entities.enums import SaleStatus
@@ -103,7 +104,7 @@ class Sale(BaseEntity[uuid.UUID]):
         self.failed_at = datetime.now(timezone.utc)
         self.register_event(SaleFailed(sale_id=self.id))
 
-    def process_refund(self, refund_id: uuid.UUID, amount: int, refund_lines: list[dict[str, typing.Any]]) -> None:
+    def process_refund(self, refund_id: uuid.UUID, amount: int, refund_lines: list[dict[str, Any]]) -> None:
         if self.status not in (SaleStatus.COMPLETED, SaleStatus.RETURNED):
             raise InvalidSaleStateError("Sale must be completed to process a refund")
             
