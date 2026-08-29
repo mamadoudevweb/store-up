@@ -34,7 +34,6 @@ def account_mock():
 
 
 def test_checkout_service_success(uow_mock, uow_factory, account_mock):
-    uow_mock.stock_items.atomic_reserve.return_value = True
     
     service = SaleService(uow_factory)
     
@@ -55,34 +54,12 @@ def test_checkout_service_success(uow_mock, uow_factory, account_mock):
     sale = result.data
     from src.domains.sale.entities.enums import SaleStatus
     assert sale.status == SaleStatus.PENDING
-    uow_mock.stock_items.atomic_reserve.assert_called_once()
     uow_mock.sales.add.assert_called_once_with(sale)
     uow_mock.track.assert_called_once_with(sale)
     uow_mock.commit.assert_called_once()
 
 
-def test_checkout_service_insufficient_stock(uow_mock, uow_factory, account_mock):
-    uow_mock.stock_items.atomic_reserve.return_value = False
-    
-    service = SaleService(uow_factory)
-    
-    with pytest.raises(InsufficientStockError):
-        service.checkout(
-            account=account_mock,
-            seller_account_id=uuid.uuid4(),
-            payment_method_id=uuid.uuid4(),
-            lines_data=[
-                {
-                    "variant_id": uuid.uuid4(),
-                    "quantity": 2,
-                    "unit_price": 100,
-                    "discount": 0
-                }
-            ]
-        )
-        
-    uow_mock.rollback.assert_called_once()
-    uow_mock.sales.add.assert_not_called()
+
 
 
 def test_complete_sale(uow_mock, uow_factory, account_mock):
@@ -226,26 +203,7 @@ def test_request_refund_partial_cumulative(uow_mock, uow_factory, account_mock):
     # Expected current refund amount: 405 - 162 = 243
     assert event.amount == 243
 
-def test_checkout_reserves_stock_in_variant_id_order(uow_mock, uow_factory, account_mock):
-    uow_mock.stock_items.atomic_reserve.return_value = True
 
-    variant_high = uuid.UUID("ffffffff-ffff-ffff-ffff-ffffffffffff")
-    variant_low = uuid.UUID("00000000-0000-0000-0000-000000000000")
-
-    service = SaleService(uow_factory)
-    service.checkout(
-        account=account_mock,
-        seller_account_id=uuid.uuid4(),
-        payment_method_id=uuid.uuid4(),
-        lines_data=[
-            {"variant_id": variant_high, "quantity": 1, "unit_price": 10, "discount": 0},
-            {"variant_id": variant_low, "quantity": 1, "unit_price": 10, "discount": 0},
-        ],
-    )
-
-    calls = uow_mock.stock_items.atomic_reserve.call_args_list
-    reserved_variant_ids = [call.args[0] for call in calls]
-    assert reserved_variant_ids == [variant_low, variant_high]
 
 
 def test_complete_sale_not_found(uow_mock, uow_factory, account_mock):
@@ -270,9 +228,6 @@ def test_fail_sale_marks_failed_and_releases_stock(uow_mock, uow_factory, accoun
     result = service.fail_sale(account=account_mock, sale_id=uuid.uuid4(), reason="Card declined")
 
     sale.mark_failed.assert_called_once_with("Card declined")
-    assert uow_mock.stock_items.atomic_release.call_count == 2
-    uow_mock.stock_items.atomic_release.assert_any_call(line1.variant_id, line1.quantity)
-    uow_mock.stock_items.atomic_release.assert_any_call(line2.variant_id, line2.quantity)
     uow_mock.sales.update.assert_called_once_with(sale)
     uow_mock.commit.assert_called_once()
     assert result.data == sale
@@ -285,8 +240,6 @@ def test_fail_sale_not_found(uow_mock, uow_factory, account_mock):
 
     with pytest.raises(SaleNotFoundError):
         service.fail_sale(account=account_mock, sale_id=uuid.uuid4(), reason="Card declined")
-
-    uow_mock.stock_items.atomic_release.assert_not_called()
 
 
 def test_request_refund_sale_not_found(uow_mock, uow_factory, account_mock):
@@ -426,7 +379,12 @@ def test_sale_service_process_refund(uow_mock, uow_factory, account_mock):
     )
     
     assert sale_line.refunded_quantity == 2
-    sale.process_refund.assert_called_once_with(refund_id=refund_id, amount=200)
+    sale.process_refund.assert_called_once_with(refund_id=refund_id, amount=200, refund_lines=[
+            {
+                "sale_line_id": sale_line.id,
+                "quantity": 2
+            }
+        ])
     
     uow_mock.sales.update.assert_called_once_with(sale)
     uow_mock.track.assert_called_once_with(sale)

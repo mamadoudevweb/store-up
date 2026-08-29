@@ -27,13 +27,6 @@ class SaleService(BaseService):
         lines_data_sorted = sorted(lines_data, key=lambda x: str(x["variant_id"]))
         
         with self._uow_factory() as uow:
-            for line_data in lines_data_sorted:
-                variant_id = line_data["variant_id"]
-                qty = line_data["quantity"]
-                success = getattr(uow, "stock_items").atomic_reserve(variant_id, qty)
-                if not success:
-                    uow.rollback()
-                    raise InsufficientStockError(f"Insufficient stock for variant {variant_id}")
 
             sale_id = uuid.uuid4()
             sale_lines = [
@@ -87,9 +80,6 @@ class SaleService(BaseService):
                 raise SaleNotFoundError()
                 
             sale.mark_failed(reason)
-            
-            for line in sale.lines:
-                getattr(uow, "stock_items").atomic_release(line.variant_id, line.quantity)
                 
             getattr(uow, "sales").update(sale)
             uow.track(sale)
@@ -120,7 +110,7 @@ class SaleService(BaseService):
                         raise RefundQuantityExceededError(f"Cannot refund more than sold for line {sale_line_id}")
                     sale_line.refunded_quantity += quantity
 
-            sale.process_refund(refund_id=refund_id, amount=amount)
+            sale.process_refund(refund_id=refund_id, amount=amount, refund_lines=lines_data)
             
             getattr(uow, "sales").update(sale)
             uow.track(sale)

@@ -46,3 +46,12 @@ class RefundRequested(DomainEvent):
     lines_data: list[dict[str, typing.Any]]
     event_name: str = "refund_requested"
 
+
+@dataclass(kw_only=True, frozen=True)
+class RefundCompleted(DomainEvent):
+    """Emitted when a refund is processed (partial or full), so stock can restock items."""
+    refund_id: uuid.UUID
+    sale_id: uuid.UUID
+    lines: list[dict[str, typing.Any]]
+    event_name: str = "refund_completed"
+

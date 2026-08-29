@@ -2,6 +2,12 @@ import uuid
 
 import pytest
 
+from flask_jwt_extended import create_access_token
+
+from src.domains.rbac.repositories.filters import PermissionFilter
+from src.domains.rbac.entities import Permission
+from src.domains.stock.entities import StockItem
+from tests.conftest import MockActor
 from src.domains.stock.entities.enums import StockMovementReason, ReferenceType
 
 
@@ -12,7 +18,6 @@ def variant_id():
 @pytest.fixture
 def stock_item(app, uow_factory, variant_id):
     with app.app_context():
-        from src.domains.stock.entities import StockItem
         item = StockItem.create(variant_id=variant_id)
         with uow_factory() as uow:
             item = uow.stock_items.add(item)
@@ -24,15 +29,11 @@ def stock_item(app, uow_factory, variant_id):
 def stock_superuser_headers(app, uow_factory):
     with app.app_context():
         domain_service = app.extensions["domain_service"]
-        from tests.conftest import MockActor
         mock_actor = MockActor({"*"})
         unique_suffix = uuid.uuid4().hex[:8]
         
         acc = domain_service.accounts.account.create_account("Admin", "Stock").data
         role = domain_service.rbac.role.create_role(mock_actor, f"stock_admin_{unique_suffix}", "Stock Admin").data
-        
-        from src.domains.rbac.repositories.filters import PermissionFilter
-        from src.domains.rbac.entities import Permission
         
         perms_to_create = [
             ("stock:stock_item", "read"),
@@ -55,8 +56,7 @@ def stock_superuser_headers(app, uow_factory):
         domain_service.accounts.account_role.assign_role(mock_actor, acc.id, role.id)
         
         cred = domain_service.accounts.credential.set_credentials(acc.id, f"admin_{unique_suffix}", f"admin_{unique_suffix}@store.local", "password").data
-    from flask_jwt_extended import create_access_token
-    token = create_access_token(identity=str(acc.id))
+        token = create_access_token(identity=str(acc.id))
     return {"Authorization": f"Bearer {token}"}
 
 def test_get_stock_item_api(client, stock_superuser_headers, stock_item):

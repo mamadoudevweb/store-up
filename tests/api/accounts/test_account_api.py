@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import pytest
+import uuid
 from flask_jwt_extended import create_access_token
 
 
@@ -93,7 +94,6 @@ def test_assign_list_revoke_roles(client, auth_headers, app):
     res = client.post("/api/v1/accounts", json={"first_name": "Role", "last_name": "Acc"})
     acc_id = res.get_json()["data"]["id"]
     
-    import uuid
     role_id = str(uuid.uuid4())
 
     res = client.post(f"/api/v1/accounts/{acc_id}/roles", json={"role_id": role_id}, headers=auth_headers)
