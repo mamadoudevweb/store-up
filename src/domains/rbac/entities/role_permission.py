@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from src.core.entities.base_entity import Entity
+from src.domains.rbac.events import RolePermissionAssigned, RolePermissionRevoked
 
 @dataclass(kw_only=True)
 class RolePermission(Entity[UUID]):
@@ -28,7 +29,6 @@ class RolePermission(Entity[UUID]):
             permission_id=permission_id
         )
 
-        from src.domains.rbac.events import RolePermissionAssigned
         role_permission.register_event(
             RolePermissionAssigned(
                 role_id=role_permission.role_id,
@@ -41,7 +41,6 @@ class RolePermission(Entity[UUID]):
 
     def revoke_permission(self) -> None:
         self.revoked_at = datetime.now(timezone.utc)
-        from src.domains.rbac.events import RolePermissionRevoked
         self.register_event(
             RolePermissionRevoked(
                 role_id=self.role_id,
@@ -52,7 +51,6 @@ class RolePermission(Entity[UUID]):
     def reactivate(self) -> None:
         self.revoked_at = None
         self.assigned_at = datetime.now(timezone.utc)
-        from src.domains.rbac.events import RolePermissionAssigned
         self.register_event(
             RolePermissionAssigned(
                 role_id=self.role_id,
