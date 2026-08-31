@@ -9,7 +9,6 @@ from datetime import datetime, timezone
 from src.core.entities.base_entity import Entity
 from src.domains.rbac.events import PermissionCreated
 
-
 @dataclass(kw_only=True)
 class Permission(Entity[UUID]):
     resource: str      # e.g., 'products', 'accounts'

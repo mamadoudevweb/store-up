@@ -22,7 +22,6 @@ class Role(Entity[UUID]):
     def create(cls, name: str, description: str) -> "Role":
         role = cls(id=uuid.uuid4(), name=name, description=description)
 
-        from src.domains.rbac.events import RoleCreated
         if role.id is None:
             raise ValueError("role ID cannot be None")
         role.register_event(
@@ -42,7 +41,6 @@ class Role(Entity[UUID]):
             self.description = description
         self.updated_at = datetime.now(timezone.utc)
 
-        from src.domains.rbac.events import RoleUpdated
         self.register_event(
             RoleUpdated(
                 role_id=self.id,

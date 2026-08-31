@@ -23,8 +23,8 @@ class RoleService(BaseService):
             if uow.roles.exists(RoleFilter(name=name)):
                 raise RoleAlreadyExists(f"Role '{name}' already exists.")
 
-            role = Role(name=name, description=description)
-            role = uow.roles.add(role)
+            role = Role.create(name=name, description=description or "")
+            uow.roles.add(role)
             uow.track(role)
 
             return ServiceResult(data=role)
@@ -49,6 +49,7 @@ class RoleService(BaseService):
             role = uow.roles.get(role_id)
             if not role:
                 raise RoleNotFound(f"Role '{role_id}' not found.")
+            role.mark_deleted()
             uow.roles.delete(role)
             uow.track(role)
             return ServiceResult(data=None)
