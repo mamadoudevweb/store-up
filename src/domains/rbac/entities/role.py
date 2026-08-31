@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from src.core.entities.base_entity import Entity
+from src.domains.rbac.events import RoleCreated, RoleUpdated, RoleDeleted
 
 
 @dataclass(kw_only=True)
@@ -21,7 +22,6 @@ class Role(Entity[UUID]):
     def create(cls, name: str, description: str) -> "Role":
         role = cls(id=uuid.uuid4(), name=name, description=description)
 
-        from src.domains.rbac.events import RoleCreated
         if role.id is None:
             raise ValueError("role ID cannot be None")
         role.register_event(
@@ -41,7 +41,6 @@ class Role(Entity[UUID]):
             self.description = description
         self.updated_at = datetime.now(timezone.utc)
 
-        from src.domains.rbac.events import RoleUpdated
         self.register_event(
             RoleUpdated(
                 role_id=self.id,
@@ -52,5 +51,4 @@ class Role(Entity[UUID]):
     def mark_deleted(self) -> None:
         if self.id is None:
             raise ValueError("self ID cannot be None")
-        from src.domains.rbac.events import RoleDeleted
         self.register_event(RoleDeleted(role_id=self.id, name=self.name))

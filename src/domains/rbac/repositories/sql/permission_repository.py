@@ -25,5 +25,6 @@ class SqlPermissionRepository(BaseSqlRepository[Permission, PermissionFilter]):
             q = q.where(PermissionModel.action == entity_filter.action)
         if entity_filter.role_id:
             q = q.join(RolePermissionModel, RolePermissionModel.permission_id == PermissionModel.id)\
-                 .where(RolePermissionModel.role_id == entity_filter.role_id)
+                 .where(RolePermissionModel.role_id == entity_filter.role_id)\
+                 .where(RolePermissionModel.revoked_at.is_(None))
         return q

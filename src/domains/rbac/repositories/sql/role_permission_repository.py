@@ -21,10 +21,17 @@ class SqlRolePermissionRepository(BaseSqlRepository[RolePermission, RolePermissi
             q = q.where(RolePermissionModel.role_id == entity_filter.role_id)
         if entity_filter.permission_id:
             q = q.where(RolePermissionModel.permission_id == entity_filter.permission_id)
+        if entity_filter.active_only:
+            q = q.where(RolePermissionModel.revoked_at.is_(None))
         return q
 
     def update(self, entity: RolePermission) -> RolePermission:
-        return entity
+        model = self._session.get(self.model, (entity.role_id, entity.permission_id))
+        if not model:
+            return entity
+        model = self.mapper.to_model(entity, model)
+        self._session.flush()
+        return self.mapper.to_entity(model)
 
     def delete(self, entity: RolePermission) -> None:
         model = self._session.get(self.model, (entity.role_id, entity.permission_id))

@@ -24,9 +24,9 @@ class PermissionService(BaseService):
             if uow.permissions.exists(PermissionFilter(resource=resource, action=action)):
                 raise PermissionAlreadyExists(f"Permission '{resource}:{action}' already exists.")
 
-            added_perm = Permission(resource=resource, action=action, description=description)
-            added_perm = uow.permissions.add(added_perm)
-            uow.commit()
+            added_perm = Permission.create(resource=resource, action=action, description=description or "")
+            uow.permissions.add(added_perm)
+            uow.track(added_perm)
 
             return ServiceResult(data=added_perm)
 
@@ -75,5 +75,4 @@ class PermissionService(BaseService):
             if not permission:
                 raise PermissionNotFound(f"Permission '{permission_id}' not found.")
             uow.permissions.delete(permission)
-            uow.commit()
             return ServiceResult(data=None)

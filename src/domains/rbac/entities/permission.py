@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from src.core.entities.base_entity import Entity
-
+from src.domains.rbac.events import PermissionCreated
 
 @dataclass(kw_only=True)
 class Permission(Entity[UUID]):
@@ -26,7 +26,6 @@ class Permission(Entity[UUID]):
             description=description
         )
 
-        from src.domains.rbac.events import PermissionCreated
         if permission.id is None:
             raise ValueError("permission ID cannot be None")
         permission.register_event(
