@@ -48,16 +48,12 @@ The RBAC domain emits the following events when mutations occur:
 flowchart LR
     R[RBAC Domain] -->|RoleCreated| EB((Event Bus))
     R -->|PermissionCreated| EB
-    R -->|RolePermissionAssigned| EB
-    R -->|RolePermissionRevoked| EB
 ```
 
 ### Emitted Events
 - `RoleCreated(role_id, name)`
 - `RoleDeleted(role_id)`
 - `PermissionCreated(permission_id, resource, action)`
-- `RolePermissionAssigned(role_id, permission_id)`
-- `RolePermissionRevoked(role_id, permission_id)`
 
 ### Subscribed Events
 *The RBAC domain does not currently subscribe to events from other domains.*
@@ -76,12 +72,20 @@ sequenceDiagram
     participant DB
     
     Admin->>API: POST /api/v1/roles/<uuid>/permissions
-    API->>RoleService: assign(role_id, permission_id)
+    API->>API: jwt_required()
+    API->>API: AssignPermissionRequest.model_validate(...)
+    API->>RoleService: assign(actor, role_id, permission_id)
+    RoleService->>RoleService: _authorize(...)
     RoleService->>DB: Check if Role exists
     RoleService->>DB: Check if Permission exists
-    RoleService->>DB: Insert RolePermission
-    RoleService-->>API: 201 Created
-    API-->>Admin: Success
+    RoleService->>DB: Check if RolePermission exists
+    alt exists
+        RoleService-->>API: ServiceResult(existing_assignment)
+    else new
+        RoleService->>DB: Insert RolePermission
+        RoleService-->>API: ServiceResult(new_assignment)
+    end
+    API-->>Admin: 201 Created
 ```
 
 ### Role Service
@@ -104,19 +108,24 @@ sequenceDiagram
   - `name` (string, length 1-100, required)
   - `description` (string, max length 255, optional)
 - **Responses:**
-  - **`201 Created`**: Returns `RoleResponse`.
+  - **`201 Created`**: Returns `{ data: RoleResponse }`.
   - **`400 Bad Request`**: Validation error if fields are invalid.
   - **`409 Conflict`**: Role with the same name already exists.
+  - **`422 Validation Error`**: Validation error if fields are malformed.
 
 #### `GET /api/v1/roles`
 - **Use Case:** Listing all available roles.
+- **Query Parameters:**
+  - `page` (integer, default: 1)
+  - `limit` (integer, default: 20)
+  - `name` (string, optional)
 - **Responses:**
-  - **`200 OK`**: Returns a list of `RoleResponse`.
+  - **`200 OK`**: Returns a paginated list of `RoleResponse`.
 
 #### `GET /api/v1/roles/<uuid>`
 - **Use Case:** Fetching details of a specific role.
 - **Responses:**
-  - **`200 OK`**: Returns `RoleResponse`.
+  - **`200 OK`**: Returns `{ data: RoleResponse }`.
   - **`404 Not Found`**: Role not found.
 
 #### `PUT /api/v1/roles/<uuid>`
@@ -166,9 +175,8 @@ sequenceDiagram
 - **Request Schema (`AssignPermissionRequest`):**
   - `permission_id` (UUID, required)
 - **Responses:**
-  - **`201 Created`**: Returns a success confirmation.
+  - **`201 Created`**: Returns a success confirmation (returns existing assignment if already assigned).
   - **`404 Not Found`**: If role or permission does not exist.
-  - **`409 Conflict`**: If the permission is already assigned to the role.
 
 #### `GET /api/v1/roles/<uuid>/permissions`
 - **Use Case:** Listing all permissions assigned to this role.

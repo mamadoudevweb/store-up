@@ -7,7 +7,7 @@ This site serves as the single source of truth for the API specifications, data 
 ## Architecture Overview
 
 Store-Up is built using a strict **Domain-Driven Design (DDD)** architecture on top of Flask and SQLAlchemy. 
-The codebase is structured to ensure domains are decoupled, communicating asynchronously through an Event Bus when cross-domain reactions are necessary.
+The codebase is structured to ensure domains are decoupled, communicating through an Event Bus when cross-domain reactions are necessary.
 
 - **Entities**: Pure Python dataclasses representing business concepts.
 - **Repositories**: SQL-backed stores interacting with a generic Unit of Work.
