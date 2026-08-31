@@ -356,6 +356,7 @@ def test_sale_service_process_refund(uow_mock, uow_factory, account_mock):
     
     sale_line = MagicMock()
     sale_line.id = uuid.uuid4()
+    sale_line.variant_id = uuid.uuid4()
     sale_line.quantity = 5
     sale_line.refunded_quantity = 0
     sale.lines = [sale_line]
@@ -381,7 +382,7 @@ def test_sale_service_process_refund(uow_mock, uow_factory, account_mock):
     assert sale_line.refunded_quantity == 2
     sale.process_refund.assert_called_once_with(refund_id=refund_id, amount=200, refund_lines=[
             {
-                "sale_line_id": sale_line.id,
+                "variant_id": sale_line.variant_id,
                 "quantity": 2
             }
         ])

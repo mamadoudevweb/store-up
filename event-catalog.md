@@ -31,7 +31,7 @@ This is where the three domains' independently-designed pieces have to interlock
 
 | Event | Owner | Payload | Consumer | Reaction |
 |---|---|---|---|---|
-| `StockReserved` | Stock | `stock_item_id`, `variant_id`, `sale_id` (as `reference_id`, `reference_type="sale"`) | Billing | Calls `capture(sale_id, payment_method_id, amount)` — attempt 1. |
+| `StockReserved` | Stock | `stock_item_id`, `variant_id`, `sale_id` (as `reference_id`, `reference_type="sale"`) | Billing | Resolves the authoritative Sale by `sale_id` through the Sale service to obtain `payment_method_id` and `amount`, derives the deterministic idempotency key `capture:{sale_id}:1`, then calls `capture(sale_id, payment_method_id, amount, idempotency_key)` — attempt 1. |
 | **`StockReservationFailed`** *(new — didn't exist before this catalog, only success was named)* | Stock | `sale_id`, `variant_id`, `reason` | Sale | `mark_failed(reason=stock_unavailable)`. **Billing is never invoked at all** — not invoked-then-reversed, genuinely skipped, which is the entire point of the sequencing decision (avoids ever needing to reverse a captured payment). |
 
 ### 2.3 Payment outcome
