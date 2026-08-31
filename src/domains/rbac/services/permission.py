@@ -75,5 +75,4 @@ class PermissionService(BaseService):
             if not permission:
                 raise PermissionNotFound(f"Permission '{permission_id}' not found.")
             uow.permissions.delete(permission)
-            uow.commit()
             return ServiceResult(data=None)

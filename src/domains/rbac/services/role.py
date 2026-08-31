@@ -49,6 +49,5 @@ class RoleService(BaseService):
             role = uow.roles.get(role_id)
             if not role:
                 raise RoleNotFound(f"Role '{role_id}' not found.")
-            uow.roles.delete(role)
-            uow.commit()
+            uow.track(role)
             return ServiceResult(data=None)

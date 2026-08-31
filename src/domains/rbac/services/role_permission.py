@@ -32,9 +32,9 @@ class RolePermissionService(BaseService):
             
             # Idempotent — skip if already assigned
             if not uow.role_permissions.exists(RolePermissionFilter(role_id=role_id, permission_id=permission_id)):
-                rp = RolePermission(role_id=role_id, permission_id=permission_id)
+                rp = RolePermission.assign_permission(role_id=role_id, permission_id=permission_id)
                 uow.role_permissions.add(rp)
-                uow.commit()
+                uow.track(rp)
                 return ServiceResult(data=rp)
 
             # Already assigned — return existing
@@ -54,8 +54,9 @@ class RolePermissionService(BaseService):
 
             rp = uow.role_permissions.get(RolePermissionFilter(role_id=role_id, permission_id=permission_id))
             if rp:
+                rp.revoke_permission()
+                uow.track(rp)
                 uow.role_permissions.delete(rp)
-                uow.commit()
 
             return ServiceResult(data=None)
 

@@ -35,5 +35,12 @@ class RolePermission(Entity[UUID]):
         return role_permission
         
 
-    # :TODO: Implement rovoke permission method
-    
+    def revoke_permission(self) -> None:
+        self.revoked_at = datetime.now(timezone.utc)
+        from src.domains.rbac.events import RolePermissionRevoked
+        self.register_event(
+            RolePermissionRevoked(
+                role_id=self.role_id,
+                permission_id=self.permission_id
+            )
+        )
