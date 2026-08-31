@@ -24,3 +24,7 @@ class RolePermissionModel(db.Model):  # type: ignore[name-defined]
         nullable=False,
         server_default=text("CURRENT_TIMESTAMP"),
     )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )

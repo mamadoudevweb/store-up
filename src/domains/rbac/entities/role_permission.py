@@ -13,7 +13,11 @@ class RolePermission(Entity[UUID]):
     role_id: uuid.UUID
     permission_id: uuid.UUID
     assigned_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    revoked_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    revoked_at: datetime | None = None
+
+    @property
+    def active(self) -> bool:
+        return self.revoked_at is None
 
     
     @classmethod
@@ -40,6 +44,17 @@ class RolePermission(Entity[UUID]):
         from src.domains.rbac.events import RolePermissionRevoked
         self.register_event(
             RolePermissionRevoked(
+                role_id=self.role_id,
+                permission_id=self.permission_id
+            )
+        )
+
+    def reactivate(self) -> None:
+        self.revoked_at = None
+        self.assigned_at = datetime.now(timezone.utc)
+        from src.domains.rbac.events import RolePermissionAssigned
+        self.register_event(
+            RolePermissionAssigned(
                 role_id=self.role_id,
                 permission_id=self.permission_id
             )

@@ -56,6 +56,7 @@ class RolePermissionMapper(Mapper[RolePermission, RolePermissionModel]):
             role_id=model.role_id,
             permission_id=model.permission_id,
             assigned_at=model.assigned_at,
+            revoked_at=model.revoked_at,
         )
 
     def to_model(self, entity: RolePermission, existing: RolePermissionModel | None = None) -> RolePermissionModel:
@@ -63,4 +64,5 @@ class RolePermissionMapper(Mapper[RolePermission, RolePermissionModel]):
         model.role_id = entity.role_id
         model.permission_id = entity.permission_id
         model.assigned_at = entity.assigned_at
+        model.revoked_at = entity.revoked_at
         return model

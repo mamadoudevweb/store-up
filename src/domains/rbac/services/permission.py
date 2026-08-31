@@ -26,7 +26,7 @@ class PermissionService(BaseService):
 
             added_perm = Permission(resource=resource, action=action, description=description)
             added_perm = uow.permissions.add(added_perm)
-            uow.commit()
+            uow.track(added_perm)
 
             return ServiceResult(data=added_perm)
 

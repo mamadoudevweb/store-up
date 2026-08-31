@@ -25,7 +25,7 @@ class RoleService(BaseService):
 
             role = Role(name=name, description=description)
             role = uow.roles.add(role)
-            uow.commit()
+            uow.track(role)
 
             return ServiceResult(data=role)
 

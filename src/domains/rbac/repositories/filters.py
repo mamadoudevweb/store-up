@@ -25,4 +25,5 @@ class PermissionFilter(EntityFilter):
 class RolePermissionFilter(EntityFilter):
     role_id: uuid.UUID | None = None
     permission_id: uuid.UUID | None = None
+    active_only: bool = True
 

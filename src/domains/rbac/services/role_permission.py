@@ -31,15 +31,24 @@ class RolePermissionService(BaseService):
                 raise PermissionNotFound()
             
             # Idempotent — skip if already assigned
-            if not uow.role_permissions.exists(RolePermissionFilter(role_id=role_id, permission_id=permission_id)):
-                rp = RolePermission.assign_permission(role_id=role_id, permission_id=permission_id)
-                uow.role_permissions.add(rp)
-                uow.track(rp)
-                return ServiceResult(data=rp)
+            if uow.role_permissions.exists(RolePermissionFilter(role_id=role_id, permission_id=permission_id)):
+                existing = uow.role_permissions.get(RolePermissionFilter(role_id=role_id, permission_id=permission_id))
+                return ServiceResult(data=existing)
 
-            # Already assigned — return existing
-            existing = uow.role_permissions.get(RolePermissionFilter(role_id=role_id, permission_id=permission_id))
-            return ServiceResult(data=existing)
+            # Check if it was previously revoked
+            if uow.role_permissions.exists(RolePermissionFilter(role_id=role_id, permission_id=permission_id, active_only=False)):
+                rp = uow.role_permissions.get(RolePermissionFilter(role_id=role_id, permission_id=permission_id, active_only=False))
+                if rp:
+                    rp.reactivate()
+                    uow.role_permissions.update(rp)
+                    uow.track(rp)
+                    return ServiceResult(data=rp)
+
+            # New assignment
+            rp = RolePermission.assign_permission(role_id=role_id, permission_id=permission_id)
+            uow.role_permissions.add(rp)
+            uow.track(rp)
+            return ServiceResult(data=rp)
 
     def revoke(self, actor: SupportsPermissionCheck, role_id: str | uuid.UUID, permission_id: str | uuid.UUID) -> ServiceResult[None]:
         self._authorize(actor, "rbac", "role_permission", "revoke")
@@ -55,8 +64,8 @@ class RolePermissionService(BaseService):
             rp = uow.role_permissions.get(RolePermissionFilter(role_id=role_id, permission_id=permission_id))
             if rp:
                 rp.revoke_permission()
+                uow.role_permissions.update(rp)
                 uow.track(rp)
-                uow.role_permissions.delete(rp)
 
             return ServiceResult(data=None)
 
