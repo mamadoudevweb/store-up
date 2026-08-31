@@ -65,78 +65,35 @@ def test_bug_rbac_001_create_role_emits_role_created_event(rbac, mock_actor):
 # BUG-RBAC-002 — RoleService.delete_role does not call role.mark_deleted()
 # ---------------------------------------------------------------------------
 
-def test_bug_rbac_002_delete_role_emits_role_deleted_event(rbac, mock_actor, uow_factory):
+def test_bug_rbac_002_delete_role_emits_role_deleted_event(rbac, mock_actor):
     """
     BUG-RBAC-002
     RoleService.delete_role() calls uow.roles.delete(role) directly without
     calling role.mark_deleted() first. The RoleDeleted domain event is therefore
     never registered and never dispatched.
 
-    Strategy: We intercept the entity inside the UoW *before* deletion by
-    inspecting it from a separate UoW context. The only observable surface is
-    that a spy on the dispatcher should see RoleDeleted; we approximate this by
-    checking that the returned entity (fetched before deletion) would emit
-    the event when mark_deleted() is called — and confirming the service never
-    calls it by asserting via a monkeypatched tracker.
+    Strategy: We subscribe a spy to the EventDispatcher to intercept the RoleDeleted
+    event directly from the service execution path.
     """
     suffix = uuid.uuid4().hex[:8]
     role = rbac.role.create_role(mock_actor, f"todelete_{suffix}", "desc").data
     role_id = role.id
 
-    # Track whether mark_deleted was ever called via a spy on the entity.
-    # We fetch the live entity before deletion and track calls.
-    mark_deleted_called = []
+    dispatched = []
+    uow = rbac.role._uow_factory()
+    uow._dispatcher.subscribe(RoleDeleted, dispatched.append)
 
-    original_delete = rbac.role.delete_role.__func__  # unbounded method ref
-
-    # Approach: subclass the service temporarily to observe the entity before delete.
-    # Simpler: use uow_factory to fetch the entity, call mark_deleted ourselves,
-    # then assert the service does NOT emit RoleDeleted (it skips mark_deleted).
-    with uow_factory() as uow:
-        live_role = uow.roles.get(role_id)
-        assert live_role is not None
-        live_role.mark_deleted()
-        entity_events = live_role.pull_events()
-
-    # Confirm the entity method itself works
-    assert any(isinstance(e, RoleDeleted) for e in entity_events), (
-        "Role.mark_deleted() must register a RoleDeleted event. Entity API is broken."
-    )
-
-    # Now let the service delete — it must also call mark_deleted (currently doesn't)
-    # We verify this by checking what the service tracks:
-    # If the service called mark_deleted, the entity passed to uow.track would have
-    # a RoleDeleted event. Since we can't intercept the dispatcher easily, we assert
-    # via the documented defect: service returns None and no event fires.
     del_result = rbac.role.delete_role(mock_actor, role_id)
     assert del_result.success
 
-    # The service MUST raise RoleNotFound for the already-deleted role,
-    # confirming deletion happened, but the event was silently dropped.
+    # The service MUST raise RoleNotFound for the already-deleted role
     with pytest.raises(RoleNotFound):
         rbac.role.get_role(mock_actor, role_id)
 
-    # Explicit failing assertion: service must call mark_deleted().
-    # This forces the test to be red until remediation is applied.
-    # We verify by creating a second role, deleting it, and asserting the
-    # entity's mark_deleted() would have fired — requiring a dispatcher spy.
-    # The minimal failing check: fetch entity pre-delete, assert service
-    # does NOT fire the event (making the test red = revealing the bug).
-    role2 = rbac.role.create_role(mock_actor, f"todelete2_{suffix}", "desc2").data
-
-    with uow_factory() as uow:
-        live2 = uow.roles.get(role2.id)
-        assert live2 is not None
-        # Events on the entity before deletion: should be empty (service used Role(), not Role.create())
-        pre_events = live2.pull_events()
-        pre_role_deleted = [e for e in pre_events if isinstance(e, RoleDeleted)]
-
-    rbac.role.delete_role(mock_actor, role2.id)
-
-    # If the service called mark_deleted(), the entity in the UoW session
-    # would have had a RoleDeleted event dispatched. Since we cannot intercept
-    # the session entity post-delete, we assert the entity API contract and
-    # document that the service must be patched.
+    assert len(dispatched) == 1, (
+        f"Expected 1 RoleDeleted event to be dispatched; got {len(dispatched)}. "
+        "RoleService.delete_role() must call role.mark_deleted() before deletion."
+    )
 
 
 # ---------------------------------------------------------------------------
